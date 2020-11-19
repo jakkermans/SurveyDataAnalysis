@@ -99,3 +99,21 @@ differenceCalculator2 <- function(used_data) {
 }
 
 differenceCalculator2(used_data)
+
+#Step 3
+used_data$RNA_flow_per_100000 <- as.numeric(used_data$RNA_flow_per_100000)
+
+virusCalculator <- function(used_data) {
+  dates <- unique(used_data$newdate)
+  means <- numeric(length(dates))
+  for (i in 1:length(means)) {
+    date_data <- filter(used_data, newdate == dates[i])
+    df1 <- date_data[!duplicated(date_data[,"Municipality_name"]),]
+    means[i] <- mean(df1$RNA_flow_per_100000, na.rm = TRUE)
+  }
+  means_frame <- as.data.frame(cbind(dates, means))
+  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  return(means_frame)
+}
+
+virusCalculator(used_data)
