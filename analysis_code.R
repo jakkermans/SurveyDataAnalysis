@@ -149,3 +149,63 @@ data_frame2 <- rnaWeighting(used_data)
 
 mean(data_frame1$`Mean RNA flow per 100000`, na.rm = TRUE)
 mean(data_frame2$`Adjusted mean RNA flow per 100000`, na.rm = TRUE)
+
+#Step 5
+
+meanRNAcalculator <- function(used_data, date) {
+  dates <- unique(used_data$newdate) #create a list of dates
+  means <- numeric(length(dates))
+  step1 <- filter(used_data, newdate == date)
+    
+  step1$Municipality_name <- as.factor(step1$Municipality_name)
+  mean_rna_flows <- tapply(step1$RNA_flow_per_100000, list(Municaplities = step1$Municipality_name), sum, na.rm = TRUE)
+
+  return(mean_rna_flows)
+}
+
+totalReported <- function(used_data, date) {
+  step1 <- filter(used_data, newdate == date)
+  df1 <- step1[!duplicated(step1[,"Municipality_name"]),c(3,7)]
+  
+  return(df1)
+}
+
+differenceCalculator3 <- function(used_data) {
+  dates <- unique(used_data$newdate) #create a list of dates
+  cors <- numeric(length(dates)-7) #create a vector of zeros equal in length to the number of dates - 1 because we calculate differences
+  cor_frame <- data.frame()
+  
+  for (i in 1:(length(cors))) {
+    step1 <- filter(used_data, newdate == dates[1]) #filter data from first day, e.g. 2020-09-07
+    step2 <- filter(used_data, newdate == dates[2]) #filter data from second day, e.g. 2020-09-08
+    
+    df1 <- step1[!duplicated(step1[,"Municipality_name"]),] #remove duplicate rows for total reported
+    df2 <- step2[!duplicated(step2[,"Municipality_name"]),] #remove duplicate rows for total reported
+    
+    df1$Municipality_name <- as.factor(df1$Municipality_name) 
+    step1$Municipality_name <- as.factor(step1$Municipality_name)
+    step2$Municipality_name <- as.factor(step2$Municipality_name)
+    ind1 <- sort.list(df1$Municipality_name)
+    ind2 <- sort.list(df2$Municipality_name)
+    
+    diff_infections <- df2[ind2,]$Total_reported - df1[ind1,]$Total_reported #calculate difference in infections for each municipality
+    
+    diff_rna <- tapply(step2$RNA_flow_per_100000, list(Municipalities = step2$Municipality_name), sum, na.rm = TRUE) - tapply(step1$RNA_flow_per_100000, list(Municipalities = step1$Municipality_name), sum, na.rm = TRUE) #calculate difference in total rna flow for each municipality
+    
+    new_frame = data.frame(rep(dates[i+1], 344), df1$Municipality_name, diff_infections, diff_rna)
+    colnames(new_frame) <- c("Date", "Municipality", "Change in infections", "Change in RNA")
+    cor_frame <- rbind(cor_frame, new_frame)
+  }
+
+  return(cor_frame)
+}
+
+cor_frame <- differenceCalculator3(used_data)
+cor_frame$Municipality <- rownames(cor_frame)
+
+means1day <- meanRNAcalculator(used_data, "2020-09-07")
+means1day[means1day == "NaN"] <- 0
+means1day
+
+infections <- totalReported(used_data, "2020-09-14")
+cor(means1day, infections$Total_reported)
