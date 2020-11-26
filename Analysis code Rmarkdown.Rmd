@@ -1,0 +1,319 @@
+---
+title: "Analysis code Rmarkdown"
+author: "Lauke Stoel"
+date: "26/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load packages, include=FALSE}
+library(dplyr)
+library(tidyverse)
+```
+
+Set working directory and load data
+```{r}
+setwd("C:/Users/lasto/OneDrive/Documents/Masters/Rwork/Survey")
+dat <- readRDS("covid cases waste + tests.RDS")
+```
+
+
+### DATA CLEANING
+
+Rename column names to include a code for the level of measurement: 
+SR = Security Region
+MN = Municipality
+TP = Treatment Plant
+
+```{r}
+dat <- dat %>% rename(SR_code = code, 
+                        SR_name = naam,
+                        MN_name = Municipality_name, 
+                        MN_code = Municipality_code, 
+                        MN_province = Province,
+                        MN_total.reported = Total_reported, 
+                        MN_hospital.admisstions = Hospital_admission, 
+                        MN_deceased = Deceased, 
+                        MN_pop = inhabitants, 
+                        MN_popperkm2 = perkm.2, 
+                        MN_sizekm2 = size,
+                        TP_code = RWZI_AWZI_code, 
+                        TP_name = RWZI_AWZI_name,
+                        TP_Xco = X_coordinate,
+                        TP_Yco = Y_coordinate, 
+                        TP_postal.code = Postal_code, 
+                        TP_security.region = Security_region_name, 
+                        TP_percentage.in.SR = Percentage_in_security_region,
+                        TP_RNA.per.ml = RNA_per_ml, 
+                        TP_RNA.flow.per.100000 = RNA_flow_per_100000, 
+                        TP_representative.measurement = Representative_measurement)
+```
+
+Re-order the data such that those of the same level of measurement are put together. The date_of_report variable has been left out - it's the same as newdate and newdate has a more convenient notation. 
+```{r}
+dat <- dat %>% select(newdate, SR_code, SR_name, MN_code, MN_name, MN_code:TP_RNA.per.ml, TP_RNA.flow.per.100000, TP_representative.measurement)
+```
+
+Structure of the dataset: 
+```{r}
+str(dat)
+```
+Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2, TP_percentage.in.SR and TP_RNA.flow.per.100000. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. 
+```{r}
+#replace comma's by dots for all variables with decimals
+dat$MN_sizekm2 <- gsub(",", ".", dat$MN_sizekm2)
+dat$MN_popperkm2 <- gsub(",", ".", dat$MN_popperkm2)
+dat$TP_percentage.in.SR <- gsub(",", ".", dat$TP_percentage.in.SR)
+dat$TP_RNA.flow.per.100000 <- gsub(",", ".", dat$TP_RNA.flow.per.100000)
+
+#multiply by 1000 to get rid of the "." in the population variable
+dat <- dat %>% mutate(MN_pop = MN_pop*1000)
+
+#redefine variables as numeric:
+dat$TP_Yco <- as.numeric(dat$TP_Yco)
+dat$MN_popperkm2 <- as.numeric(dat$MN_popperkm2)
+dat$MN_sizekm2 <- as.numeric(dat$MN_sizekm2)
+dat$TP_RNA.flow.per.100000 <- as.numeric(dat$TP_RNA.flow.per.100000)
+dat$TP_percentage.in.SR <- as.numeric(dat$TP_percentage.in.SR)
+
+#check the structure again
+str(dat)
+```
+
+
+### CONTENT OF THE ASSIGNMENT
+
+#Step 1: New cases for each day + extra: difference in new cases per day
+
+We are only considering dates from the 7th of September onward, because from that date, all sewage treatment plants joined in reporting data, and the type of measurement changes from RNA per milliliter to RNA flow per 100,000 inhabitants in the municipality. 
+
+```{r}
+#create dataframe with only the observations from 7th of September onward
+all_dates <- unique(dat$newdate) #243 recorded dates, starting March 13th
+used_dates <- dat %>% filter(newdate %in% dates[-c(1:178)]) #dates from 7th of Sept
+```
+
+Calculating the total number of cases for each day, for any selection of this dataset we enter into the formula. Outputs a data frame and a plot of the totals. 
+```{r}
+#this function calculates the total of reported cases on one day, across all municipalities:
+totalCalculator <- function(sewer_data) {
+  dates <- unique(sewer_data$newdate) #create a list of unique dates in the dataset 
+  totals <- numeric(length(dates)) #make an object with the length of the number of dates
+  
+  #subtract nr of reported cases of the day before each day to get the difference
+  for (i in 1:(length(totals))) {
+    step1 <- filter(sewer_data, newdate == dates[i]) #select date we want to calculate the nr of new cases for
+    
+    #create data frame of the  dates, and remove duplicates (total reported per municipalities are the same across duplicates)
+    df <- step1[!duplicated(step1[,"MN_name"]),] 
+    
+    #calculate the sum of all new reported cases per municipality and store in object
+    sums <- sum(df$MN_total.reported, na.rm = TRUE)
+    totals[i] <- sums
+  }
+  
+  #create a data frame with all the outcomes, matched with each date
+  totals_frame <- as.data.frame(cbind(dates, totals))
+  colnames(totals_frame) <- c("Date", "Total number of reported infections") #rename columns
+  totals_frame$`Total number of reported infections` <- as.numeric(totals_frame$`Total number of reported infections`) #store the totals as numeric values.
+  
+  #create a plot of the totals over time
+  plot <- barplot(totals_frame$`Total number of reported infections`, main = "Total number of reported infections per day", xlab = "Date", ylab = "Total number of reported infections", ylim = c(0,350000), names.arg = as.Date(dates))
+  
+  #Output a data frame with the total of new cases per day
+  output = list(totals_frame, plot)
+  return(output)
+}
+
+totalCalculator(used_dates)
+
+```
+
+
+```{r}
+#this function calculates the difference in reported cases between one day and the day before that:
+differenceCalculator <- function(sewer_data) {
+  dates <- unique(sewer_data$newdate) #create a list of unique dates in the dataset
+  differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of        dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.  
+  
+  #subtract nr of reported cases of the day before each day to get the difference
+  for (i in 1:(length(differences))) {
+    step1 <- filter(sewer_data, newdate == dates[i]) #select date of reference
+    step2 <- filter(sewer_data, newdate == dates[i+1]) #select date we want to calculate the nr of new cases for
+    
+    #create data frames of both sets of dates, and remove duplicates (total reported per municipalities are the same across duplicates)
+    df1 <- step1[!duplicated(step1[,"MN_name"]),] 
+    df2 <- step2[!duplicated(step2[,"MN_name"]),]
+    
+    #calculate the difference between the two dataframes for each set of dates and store in object
+    diff <- (sum(df2$MN_total.reported, na.rm = TRUE) - sum(df1$MN_total.reported, na.rm = TRUE))
+    differences[i] <- diff
+  }
+  
+  #create a data frame with all the outcomes, matched with each date
+  diff_frame <- as.data.frame(cbind(dates[-1], differences))
+  colnames(diff_frame) <- c("Date", "Difference in reported infections") #rename columns
+  diff_frame$`Difference in reported infections` <- as.numeric(diff_frame$`Difference in reported infections`) #store the differences as numeric values.
+  
+  
+  #create a plot of the totals over time
+  plot <- barplot(diff_frame$`Difference in reported infections`, main = "Difference in reported infections compared to the previous day", xlab = "Date", ylab = "Difference in reported infections", names.arg = as.Date(dates[-1]))
+  
+  #Output a data frame with new cases per day
+  output = list(diff_frame, plot)
+  return(output)
+}
+
+differenceCalculator(used_dates)
+```
+
+#Step 2: mean number of infections per 100.000 inhabitants per day
+```{r}
+used_dates$MN_pop <- used_dates$MN_pop * 1000
+used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
+
+differenceCalculator2 <- function(used_dates) {
+  dates <- unique(used_dates$newdate) #create a list of dates
+  differences <- numeric(length(dates)-1)
+  for (i in 1:(length(differences))) {
+    step1 <- filter(used_dates, newdate == dates[i])
+    step2 <- filter(used_dates, newdate == dates[i+1])
+    
+    df1 <- step1[!duplicated(step1[,"MN_name"]),]
+    df2 <- step2[!duplicated(step2[,"MN_name"]),]
+    diff <- (mean(df2$cases_per_100000, na.rm = TRUE) - mean(df1$cases_per_100000, na.rm = TRUE))
+    
+    differences[i] <- diff
+  }
+  diff_frame <- as.data.frame(cbind(dates[-1], differences))
+  colnames(diff_frame) <- c("Date", "Increase in reported infections per 100000")
+  diff_frame$`Increase in reported infections per 100000` <- as.numeric(diff_frame$`Increase in reported infections per 100000`)
+  return(diff_frame)
+}
+
+differenceCalculator2(used_dates)
+```
+
+
+#Step 3: the mean the level of virus particles found in the water per 100.000 cases
+```{r}
+
+used_dates$TP_RNA.flow.per.100000 <- as.numeric(used_dates$TP_RNA.flow.per.100000)
+
+virusCalculator <- function(used_dates) {
+  dates <- unique(used_dates$newdate)
+  means <- numeric(length(dates))
+  for (i in 1:length(means)) {
+    date_data <- filter(used_dates, newdate == dates[i])
+    df1 <- date_data[!duplicated(date_data[,"MN_name"]),]
+    means[i] <- mean(df1$TP_RNA.flow.per.100000, na.rm = TRUE)
+  }
+  means_frame <- as.data.frame(cbind(dates, means))
+  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
+  return(means_frame)
+}
+
+data_frame1 <- virusCalculator(used_dates)
+```
+
+
+#Step 4: mean number of infections per 100.000 inhabitants per day, weighted for the percentage of sewage water of a municipality by a treatment plant.
+
+We believe that the value in the column 'TP_security.region' corresponds with the percentage of sewage water that a RWZI processes that comes from the security region it is in. Therefore, a sensible way of implementing the weighting is to take that percentage and multiply it with the RNA particle flow within that RWZI. We subsequently take the mean per day and see how it has affected the mean RNA flow.
+
+### FOR OUR GROUP: I'VE REMOVED ALL NA ROWS FOR NOW. THIS WOULD HAVE ALSO BEEN DONE IF NA.RM HAD BEEN IMPLEMENTED IN CALCULATING THE MEAN
+
+```{r}
+rnaWeighting <- function(used_dates) {
+  options(digits = 22)
+  dates <- unique(used_dates$newdate) #create a list of all dates
+  adjusted_means <- numeric(length(dates)) #create a vector of zeros that is equal in length to the number of dates
+  
+  non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
+  non_na_data2 <- non_na_data[!is.na(non_na_data$TP_security.region),]
+  non_na_data2$TP_security.region <- as.double(non_na_data2$TP_security.region)
+  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 * non_na_data2$TP_security.region) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
+  for (i in 1:length(adjusted_means)) {
+    day_data <- filter(non_na_data2, newdate == dates[i])
+    df1 <- day_data[!duplicated(day_data[,"MN_name"]),]
+    adjusted_means[i] <- mean(df1$adjusted_RNA_flow, na.rm = TRUE)
+  }
+  means_frame <- as.data.frame(cbind(dates, adjusted_means))
+  colnames(means_frame) <- c("Date", "Adjusted mean RNA flow per 100000")
+  means_frame$`Adjusted mean RNA flow per 100000` <- as.double(means_frame$`Adjusted mean RNA flow per 100000`)
+  return(means_frame)
+}
+
+data_frame2 <- rnaWeighting(used_dates)
+
+mean(data_frame1$`Mean RNA flow per 100000`, na.rm = TRUE)
+mean(data_frame2$`Adjusted mean RNA flow per 100000`, na.rm = TRUE)
+```
+
+
+#Step 5: how do the number of RNA particles per 100.000 inhabitants and the number of new cases relate to each other?
+
+```{r}
+meanRNAcalculator <- function(used_dates, date) {
+  dates <- unique(used_dates$newdate) #create a list of dates
+  means <- numeric(length(dates))
+  step1 <- filter(used_dates, newdate == date)
+    
+  step1$MN_name <- as.factor(step1$MN_name)
+  mean_rna_flows <- tapply(step1$TP_RNA.flow.per.100000, list(Municaplities = step1$MN_name), sum, na.rm = TRUE)
+
+  return(mean_rna_flows)
+}
+
+totalReported <- function(used_dates, date) {
+  step1 <- filter(used_dates, newdate == date)
+  df1 <- step1[!duplicated(step1[,"MN_name"]),c(3,7)]
+  
+  return(df1)
+}
+
+differenceCalculator3 <- function(used_dates) {
+  dates <- unique(used_dates$newdate) #create a list of dates
+  cors <- numeric(length(dates)-7) #create a vector of zeros equal in length to the number of dates - 1 because we calculate differences
+  cor_frame <- data.frame()
+  
+  for (i in 1:(length(cors))) {
+    step1 <- filter(used_dates, newdate == dates[1]) #filter data from first day, e.g. 2020-09-07
+    step2 <- filter(used_dates, newdate == dates[2]) #filter data from second day, e.g. 2020-09-08
+    
+    df1 <- step1[!duplicated(step1[,"MN_name"]),] #remove duplicate rows for total reported
+    df2 <- step2[!duplicated(step2[,"MN_name"]),] #remove duplicate rows for total reported
+    
+    df1$MN_name <- as.factor(df1$MN_name) 
+    step1$MN_name <- as.factor(step1$MN_name)
+    step2$MN_name <- as.factor(step2$MN_name)
+    ind1 <- sort.list(df1$MN_name)
+    ind2 <- sort.list(df2$MN_name)
+    
+    diff_infections <- df2[ind2,]$MN_total.reported - df1[ind1,]$MN_total.reported #calculate difference in infections for each municipality
+    
+    diff_rna <- tapply(step2$TP_RNA.flow.per.100000, list(Municipalities = step2$MN_name), sum, na.rm = TRUE) - tapply(step1$TP_RNA.flow.per.100000, list(Municipalities = step1$MN_name), sum, na.rm = TRUE) #calculate difference in total rna flow for each municipality
+    
+    new_frame = data.frame(rep(dates[i+1], 344), df1$MN_name, diff_infections, diff_rna)
+    colnames(new_frame) <- c("Date", "Municipality", "Change in infections", "Change in RNA")
+    cor_frame <- rbind(cor_frame, new_frame)
+  }
+
+  return(cor_frame)
+}
+
+cor_frame <- differenceCalculator3(used_dates)
+cor_frame$Municipality <- rownames(cor_frame)
+
+means1day <- meanRNAcalculator(used_dates, "2020-09-07")
+means1day[means1day == "NaN"] <- 0
+means1day
+
+infections <- totalReported(used_dates, "2020-09-14")
+cor(means1day, infections$MN_total.reported)
+```
+
