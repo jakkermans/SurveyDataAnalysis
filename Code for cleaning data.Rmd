@@ -9,23 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+### DATA CLEANING
 
-Setwd and import data: 
-```{r}
-setwd("C:/Users/lasto/OneDrive/Documents/Masters/Rwork/Survey")
-library(foreign)
-library(dplyr)
-library(magrittr)
-data <- readRDS("covid cases waste + tests.RDS")
-```
-
-Rename column names to include code for level of measurement: 
+Rename column names to include a code for the level of measurement: 
 SR = Security Region
 MN = Municipality
 TP = Treatment Plant
 
 ```{r}
-data <- data %>% rename(SR_code = code, 
+dat <- dat %>% rename(SR_code = code, 
                         SR_name = naam,
                         MN_name = Municipality_name, 
                         MN_code = Municipality_code, 
@@ -46,11 +38,35 @@ data <- data %>% rename(SR_code = code,
                         TP_RNA.per.ml = RNA_per_ml, 
                         TP_RNA.flow.per.100000 = RNA_flow_per_100000, 
                         TP_representative.measurement = Representative_measurement)
-
 ```
 
 Re-order the data such that those of the same level of measurement are put together. The date_of_report variable has been left out - it's the same as newdate and newdate has a more convenient notation. 
 ```{r}
-data <- data %>% select(newdate, SR_code, SR_name, MN_code, MN_name, MN_code:TP_RNA.per.ml, TP_RNA.flow.per.100000, TP_representative.measurement)
+dat <- dat %>% select(newdate, SR_code, SR_name, MN_code, MN_name, MN_code:TP_RNA.per.ml, TP_RNA.flow.per.100000, TP_representative.measurement)
 ```
 
+Structure of the dataset: 
+```{r}
+str(dat)
+```
+Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2, TP_percentage.in.SR and TP_RNA.flow.per.100000. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. 
+```{r}
+#replace comma's by dots for all variables with decimals
+dat$MN_sizekm2 <- gsub(",", ".", dat$MN_sizekm2)
+dat$MN_popperkm2 <- gsub(",", ".", dat$MN_popperkm2)
+dat$TP_percentage.in.SR <- gsub(",", ".", dat$TP_percentage.in.SR)
+dat$TP_RNA.flow.per.100000 <- gsub(",", ".", dat$TP_RNA.flow.per.100000)
+
+#multiply by 1000 to get rid of the "." in the population variable
+dat <- dat %>% mutate(MN_pop = MN_pop*1000)
+
+#redefine variables as numeric:
+dat$TP_Yco <- as.numeric(dat$TP_Yco)
+dat$MN_popperkm2 <- as.numeric(dat$MN_popperkm2)
+dat$MN_sizekm2 <- as.numeric(dat$MN_sizekm2)
+dat$TP_RNA.flow.per.100000 <- as.numeric(dat$TP_RNA.flow.per.100000)
+dat$TP_percentage.in.SR <- as.numeric(dat$TP_percentage.in.SR)
+
+#check the structure again
+str(dat)
+```
