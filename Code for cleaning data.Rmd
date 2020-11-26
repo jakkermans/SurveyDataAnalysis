@@ -1,0 +1,56 @@
+---
+title: "Code for cleaning data"
+author: "Lauke Stoel"
+date: "26/11/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+Setwd and import data: 
+```{r}
+setwd("C:/Users/lasto/OneDrive/Documents/Masters/Rwork/Survey")
+library(foreign)
+library(dplyr)
+library(magrittr)
+data <- readRDS("covid cases waste + tests.RDS")
+```
+
+Rename column names to include code for level of measurement: 
+SR = Security Region
+MN = Municipality
+TP = Treatment Plant
+
+```{r}
+data <- data %>% rename(SR_code = code, 
+                        SR_name = naam,
+                        MN_name = Municipality_name, 
+                        MN_code = Municipality_code, 
+                        MN_province = Province,
+                        MN_total.reported = Total_reported, 
+                        MN_hospital.admisstions = Hospital_admission, 
+                        MN_deceased = Deceased, 
+                        MN_pop = inhabitants, 
+                        MN_popperkm2 = perkm.2, 
+                        MN_sizekm2 = size,
+                        TP_code = RWZI_AWZI_code, 
+                        TP_name = RWZI_AWZI_name,
+                        TP_Xco = X_coordinate,
+                        TP_Yco = Y_coordinate, 
+                        TP_postal.code = Postal_code, 
+                        TP_security.region = Security_region_name, 
+                        TP_percentage.in.SR = Percentage_in_security_region,
+                        TP_RNA.per.ml = RNA_per_ml, 
+                        TP_RNA.flow.per.100000 = RNA_flow_per_100000, 
+                        TP_representative.measurement = Representative_measurement)
+
+```
+
+Re-order the data such that those of the same level of measurement are put together. The date_of_report variable has been left out - it's the same as newdate and newdate has a more convenient notation. 
+```{r}
+data <- data %>% select(newdate, SR_code, SR_name, MN_code, MN_name, MN_code:TP_RNA.per.ml, TP_RNA.flow.per.100000, TP_representative.measurement)
+```
+
