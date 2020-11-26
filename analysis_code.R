@@ -113,7 +113,39 @@ virusCalculator <- function(used_data) {
   }
   means_frame <- as.data.frame(cbind(dates, means))
   colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
   return(means_frame)
 }
 
-virusCalculator(used_data)
+data_frame1 <- virusCalculator(used_data)
+
+#Step 4
+
+## We believe that the value in the column 'Percentage_in_security_region' corresponds with the percentage of sewage water that a RWZI processes that comes from the security region it is in. Therefore, a sensible way of implementing the weighting is to take that percentage and multiply it with the RNA particle flow within that RWZI. We subsequently take the mean per day and see how it has affected the mean RNA flow.
+
+### FOR OUR GROUP: I'VE REMOVED ALL NA ROWS FOR NOW. THIS WOULD HAVE ALSO BEEN DONE IF NA.RM HAD BEEN IMPLEMENTED IN CALCULATING THE MEAN
+
+rnaWeighting <- function(used_data) {
+  options(digits = 22)
+  dates <- unique(used_data$newdate) #create a list of all dates
+  adjusted_means <- numeric(length(dates)) #create a vector of zeros that is equal in length to the number of dates
+  
+  non_na_data <- used_data[!is.na(used_data$RNA_flow_per_100000),] #just for now eliminate NA rows
+  non_na_data2 <- non_na_data[!is.na(non_na_data$Percentage_in_security_region),]
+  non_na_data2$Percentage_in_security_region <- as.double(non_na_data2$Percentage_in_security_region)
+  non_na_data2$adjusted_RNA_flow <- (non_na_data2$RNA_flow_per_100000 * non_na_data2$Percentage_in_security_region) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
+  for (i in 1:length(adjusted_means)) {
+    day_data <- filter(non_na_data2, newdate == dates[i])
+    df1 <- day_data[!duplicated(day_data[,"Municipality_name"]),]
+    adjusted_means[i] <- mean(df1$adjusted_RNA_flow, na.rm = TRUE)
+  }
+  means_frame <- as.data.frame(cbind(dates, adjusted_means))
+  colnames(means_frame) <- c("Date", "Adjusted mean RNA flow per 100000")
+  means_frame$`Adjusted mean RNA flow per 100000` <- as.double(means_frame$`Adjusted mean RNA flow per 100000`)
+  return(means_frame)
+}
+
+data_frame2 <- rnaWeighting(used_data)
+
+mean(data_frame1$`Mean RNA flow per 100000`, na.rm = TRUE)
+mean(data_frame2$`Adjusted mean RNA flow per 100000`, na.rm = TRUE)
