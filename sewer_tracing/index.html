@@ -5,22 +5,57 @@
     <title>Tracing COVID-19 in the sewers</title>
 </head>
 <style>
-    #center_title, #center_title2, #center_title3, #center_title4 {
+    #center_title, #center_title2, #center_title3, #center_title4, #center_title5 {
         margin: auto;
         width: 50%;
         text-align: center;
     }
+
+    #center_text, #center_text2 {
+        margin: auto;
+        width: 50%;
+        text-align: left;
+    }
+
+    #left_box {
+        width: 25%;
+        float: left;
+        height: 150px;
+    }
+
+    #infection_graph {
+        width: 95%;
+    }
+
 </style>
 <body>
-    <div>
+    <div id = "left_box">
+        <h3>Structure of the page</h3>
+        <ol>
+            <li>Introduction</li>
+            <li>Problem</li>
+            <li>Solution</li>
+            <li>Conclusion</li>
+            <li>References</li>
+        </ol>
+    </div>
+    <div id = "center_text">
         <h1 id = "center_title">Introduction</h1>
-        <p>This project was conducted by Annemarie, Sander, Lauke and Jannick. It is about tracing COVID-19 particles in sewers.hahahahhahahahahahahahahahhahahahahahahahahhahahaha</p>
+        <p>In December 2019, a virus known as SARS-Cov-2 (COVID-19) initiated in Wuhan, China. This variant of the SARS coronavirus, which
+        shocked the world in 2003, caused a worldwide pandemic with many consequences. However, this virus is more dangerous since 20 to 40%
+        of the patients show no symptoms, contributing to the silent spread of the virus (Vallejo et al., 2019). </p>
+
+        <p>Although patients do
+        not always show symptoms of the virus, they do leave RNA particles of the virus in their faeces as shown by for example
+        Pan et al. (2020). The virus can sustain itself for a long period of itself within the feaces, in some cases even one or more
+        months after the respective patient has tested negative for RNA particles in their feaces (Vallejo et al., 2019). Therefore,
+        the amount of RNA particles could be an indicator of the true number of COVID-19 patients within a country or municipality.</p>
     </div>
 
-    <div>
+    <div id = "center_text2">
         <h2 id = "center_title2">The problem</h2>
-        <p>Dogs are cute and are easily bamboozled</p>
-        <img src = '1sxnb6uf8w251.png'>
+        <p>Graph 1 shows the number of infections per day:</p>
+        <img id = "infection_graph" src = 'infection_graph.PNG' alt = 'Number of infections per day'>
     </div>
 
     <div>
@@ -29,6 +64,15 @@
 
     <div>
         <h2 id = "center_title4">Conclusion</h2>
+    </div>
+
+    <div>
+        <h2 id = "center_title5">References</h2>
+        <ul>
+            <li>Vallejo, J. A., Rumbo-Feal, S., Conde-Pérez, K., López-Oriona, Á., Tarrío, J., Reif, R., ... & Veiga, M. C. (2020). Highly predictive regression model of active cases of COVID-19 in a population by screening wastewater viral load. medRxiv.</li>
+            <li>Pan, Y., Zhang, D., Yang, P., Poon, L. L. M. & Wang, Q. Viral load of SARSCoV-2 in clinical samples. The Lancet. Infectious diseases 20, 411-412,
+                doi:10.1016/s1473-3099(20)30113-4 (2020). </li>
+        </ul>
     </div>
 </body>
 </html>
