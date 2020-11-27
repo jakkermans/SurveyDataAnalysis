@@ -242,23 +242,58 @@ totalCalculator2 <- function(used_dates) {
   }
   
   #create a dataframe with the totals by the respecitve dates
-  diff_frame <- as.data.frame(cbind(dates[-1], totals))
+  tot_frame <- as.data.frame(cbind(dates[-1], totals))
   #give the columns informative names
-  colnames(diff_frame) <- c("Date", "Reported infections per 100.000")
+  colnames(tot_frame) <- c("Date", "Reported infections per 100.000")
   #and make the increase numeric
-  diff_frame$`Reported infections per 100.000` <- as.numeric(diff_frame$`Reported infections per 100.000`)
+  tot_frame$`Reported infections per 100.000` <- as.numeric(tot_frame$`Reported infections per 100.000`)
   
    #create a plot of the increase per 100.000 inhabitants over time
-   barplot(diff_frame$`Reported infections per 100.000`, 
+   barplot(tot_frame$`Reported infections per 100.000`, 
                   main = "Mean number of reported infections per 100.000 inhabitants over time", 
                   xlab = "Date", 
                   ylab = "Mean number of reported infections per 100.000 inhabitants", 
                   names.arg = as.Date(dates[-1]))
 
-  return(diff_frame)
+  return(tot_frame)
 }
 
 totalCalculator2(used_dates)
+```
+
+#Extra: RNA particles.
+```{r}
+#make a function that calculates the RNA flow per 100.000 inhabitants per day in The Netherlands as a whole.
+totalRNA <- function(used_dates) {
+  dates <- unique(used_dates$newdate) #create a list of dates
+  totals <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.
+  
+  for (i in 1:(length(totals))) {
+        step1 <- filter(used_dates, newdate == dates[i]) #select the date we want to calculate the nr of cases per 100.000 inhabitants for
+    
+    #calculate the mean number of reported cases per 100.000 inhabitants in the Netherlands and store in object
+    total <- sum(step1$TP_RNA.flow.per.100000, na.rm = TRUE) # Calculate the sum of all RNA measures on a given day
+    totals[i] <- total #store it
+  }
+  
+  #create a dataframe with the totals by the respecitve dates
+  tot_frame <- as.data.frame(cbind(dates[-1], totals))
+  #give the columns informative names
+  colnames(tot_frame) <- c("Date", "RNA flow per 100.000")
+  #and make the increase numeric
+  tot_frame$`RNA flow per 100.000` <- as.numeric(tot_frame$`RNA flow per 100.000`)
+  
+   #create a plot of the increase per 100.000 inhabitants over time
+   barplot(tot_frame$`RNA flow per 100.000`, 
+                  main = "RNA flow per 100.000 inhabitants in The Netherlands over time", 
+                  xlab = "Date", 
+                  ylab = "RNA flow per 100.000 inhabitants", 
+                  names.arg = as.Date(dates[-1]))
+
+  return(tot_frame)
+}
+
+totalRNA(used_dates)
 ```
 
 #Step 3: the mean the level of virus particles found in the water per 100.000 cases
@@ -296,18 +331,28 @@ rnaWeighting <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of all dates
   adjusted_means <- numeric(length(dates)) #create a vector of zeros that is equal in length to the number of dates
   
-  non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
-  non_na_data2 <- non_na_data[!is.na(non_na_data$TP_security.region),]
-  non_na_data2$TP_security.region <- as.double(non_na_data2$TP_security.region)
-  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 * non_na_data2$TP_security.region) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
   for (i in 1:length(adjusted_means)) {
-    day_data <- filter(non_na_data2, newdate == dates[i])
+   non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
+  non_na_data2 <- non_na_data[!is.na(non_na_data$TP_percentage.in.SR),]
+  non_na_data2$TP_percentage.in.SR <- as.double(non_na_data2$TP_percentage.in.SR)
+  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 *    non_na_data2$TP_percentage.in.SR) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
+     day_data <- filter(non_na_data2, newdate == dates[i])
     df1 <- day_data[!duplicated(day_data[,"MN_name"]),]
+    
+    
     adjusted_means[i] <- mean(df1$adjusted_RNA_flow, na.rm = TRUE)
   }
   means_frame <- as.data.frame(cbind(dates, adjusted_means))
   colnames(means_frame) <- c("Date", "Adjusted mean RNA flow per 100000")
   means_frame$`Adjusted mean RNA flow per 100000` <- as.double(means_frame$`Adjusted mean RNA flow per 100000`)
+  
+     #create a plot of the increase per 100.000 inhabitants over time
+   barplot(means_frame$`Adjusted mean RNA flow per 100000`, 
+                  main = "RNA flow per 100.000 inhabitants in The Netherlands over time", 
+                  xlab = "Date", 
+                  ylab = "RNA flow per 100.000 inhabitants", 
+                  names.arg = as.Date(dates))
+  
   return(means_frame)
 }
 
@@ -315,6 +360,7 @@ data_frame2 <- rnaWeighting(used_dates)
 
 mean(data_frame1$`Mean RNA flow per 100000`, na.rm = TRUE)
 mean(data_frame2$`Adjusted mean RNA flow per 100000`, na.rm = TRUE)
+
 ```
 
 
@@ -378,6 +424,13 @@ means1day
 
 infections <- totalReported(used_dates, "2020-09-14")
 cor(means1day, infections$MN_total.reported)
+
+
+means2day <- meanRNAcalculator(used_dates, "2020-10-20")
+means2day[means1day == "NaN"] <- 0
+
+infections2 <- totalReported(used_dates, "2020-10-27")
+cor(means2day, infections2$MN_total.reported)
 ```
 
 
@@ -385,7 +438,7 @@ cor(means1day, infections$MN_total.reported)
 #because of this:
 #multiply by 1000 to get rid of the "." in the population variable
 #dat <- dat %>% mutate(MN_pop = MN_pop*1000)
-#i think this line in step 2 is double
+#I think this line in step 2 is double, so I removed it and put it here
 used_dates$MN_pop <- used_dates$MN_pop * 1000
 
 ```
