@@ -301,6 +301,7 @@ totalRNA(used_dates)
 
 used_dates$TP_RNA.flow.per.100000 <- as.numeric(used_dates$TP_RNA.flow.per.100000)
 
+############## originele functie met verwijder duplicate councils
 virusCalculator <- function(used_dates) {
   dates <- unique(used_dates$newdate)
   means <- numeric(length(dates))
@@ -314,6 +315,35 @@ virusCalculator <- function(used_dates) {
   means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
   return(means_frame)
 }
+##########
+
+########## nieuwe functie met remove duplicate installatie names
+virusCalculator <- function(used_dates) {
+  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
+  #till october the tenth
+  dates <- unique(used_dates$newdate)
+  #makes an empty numeric vector which length is equal to number of dates
+  means <- numeric(length(dates))
+  for (i in 1:length(means)) {
+    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
+    date_data <- filter(used_dates, newdate == dates[i])
+    #delete rows if the water installation name is already in other row.
+    df1 <- date_data[!duplicated(date_data[,"TP_name"]),]
+    #take the mean of the rna per 100000 column and store in means vector
+    means[i] <- mean(df1$TP_RNA.flow.per.100000, na.rm = TRUE)
+  }
+  #put date and means vector in dataframe.
+  means_frame <- as.data.frame(cbind(dates, means))
+  #define column names.
+  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  #coerce the column into double precision vector.
+  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
+  #create a barplot 
+  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', main = 'Mean RNA flow per 100,000 per day', 
+          xlab = 'Date', ylab = 'Mean RNA flow per 100,000')
+  return(means_frame)
+}
+################
 
 data_frame1 <- virusCalculator(used_dates)
 ```
