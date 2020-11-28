@@ -313,12 +313,14 @@ virusCalculator <- function(used_dates) {
   means_frame <- as.data.frame(cbind(dates, means))
   colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
   means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
+  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', main = 'Mean RNA flow per 100,000 per day', 
+          xlab = 'Date', ylab = 'Mean RNA flow per 100,000')
   return(means_frame)
 }
 ##########
 
 ########## nieuwe functie met remove duplicate installatie names
-virusCalculator <- function(used_dates) {
+virusCalculator_new <- function(used_dates) {
   #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
   #till october the tenth
   dates <- unique(used_dates$newdate)
@@ -346,6 +348,7 @@ virusCalculator <- function(used_dates) {
 ################
 
 data_frame1 <- virusCalculator(used_dates)
+data_frame2 <- virusCalculator_new(used_dates)
 ```
 
 
