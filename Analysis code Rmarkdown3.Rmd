@@ -296,7 +296,7 @@ totalRNA <- function(used_dates) {
 totalRNA(used_dates)
 ```
 
-#Step 3: the mean the level of virus particles found in the water per 100.000 cases
+#Step 3: the mean the level of virus particles found in the water per 100.000 casess
 ```{r}
 
 used_dates$TP_RNA.flow.per.100000 <- as.numeric(used_dates$TP_RNA.flow.per.100000)
