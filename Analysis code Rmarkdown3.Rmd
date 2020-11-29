@@ -62,13 +62,11 @@ Structure of the dataset:
 ```{r}
 str(dat)
 ```
-Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2, TP_percentage.in.SR and TP_RNA.flow.per.100000. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. 
+Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2 and TP_percentage.in.SR. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. The variable population per km^2 has been recorded inconsistently; sometimes with the dot as a decimal indicator, sometimes as a 1000 indicator. We'll recalculate that variable from the population size and size of the municipality. 
 ```{r}
 #replace comma's by dots for all variables with decimals
 dat$MN_sizekm2 <- gsub(",", ".", dat$MN_sizekm2)
-dat$MN_popperkm2 <- gsub(",", ".", dat$MN_popperkm2)
 dat$TP_percentage.in.SR <- gsub(",", ".", dat$TP_percentage.in.SR)
-dat$TP_RNA.flow.per.100000 <- gsub(",", ".", dat$TP_RNA.flow.per.100000)
 
 #multiply by 1000 to get rid of the "." in the population variable
 dat <- dat %>% mutate(MN_pop = MN_pop*1000)
@@ -79,6 +77,9 @@ dat$MN_popperkm2 <- as.numeric(dat$MN_popperkm2)
 dat$MN_sizekm2 <- as.numeric(dat$MN_sizekm2)
 dat$TP_RNA.flow.per.100000 <- as.numeric(dat$TP_RNA.flow.per.100000)
 dat$TP_percentage.in.SR <- as.numeric(dat$TP_percentage.in.SR)
+
+#fix the population per km^2 variable
+dat <- dat %>% mutate(MN_popperkm2 = MN_pop/MN_sizekm2)
 
 #check the structure again
 str(dat)
