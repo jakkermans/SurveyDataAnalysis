@@ -62,11 +62,13 @@ Structure of the dataset:
 ```{r}
 str(dat)
 ```
-Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2 and TP_percentage.in.SR. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. The variable population per km^2 has been recorded inconsistently; sometimes with the dot as a decimal indicator, sometimes as a 1000 indicator. We'll recalculate that variable from the population size and size of the municipality. 
+Some variables are reported as character strings, that should be numeric variables - such as MN_sizekm2, TP_percentage.in.SR and TP_RNA.flow.per.100000. This is because the Dutch notation for decimal numbers is comma's, where R would expect dots, and vice versa. Other variables are noted in the wrong order of size because of this. 
 ```{r}
 #replace comma's by dots for all variables with decimals
 dat$MN_sizekm2 <- gsub(",", ".", dat$MN_sizekm2)
+dat$MN_popperkm2 <- gsub(",", ".", dat$MN_popperkm2)
 dat$TP_percentage.in.SR <- gsub(",", ".", dat$TP_percentage.in.SR)
+dat$TP_RNA.flow.per.100000 <- gsub(",", ".", dat$TP_RNA.flow.per.100000)
 
 #multiply by 1000 to get rid of the "." in the population variable
 dat <- dat %>% mutate(MN_pop = MN_pop*1000)
@@ -77,9 +79,6 @@ dat$MN_popperkm2 <- as.numeric(dat$MN_popperkm2)
 dat$MN_sizekm2 <- as.numeric(dat$MN_sizekm2)
 dat$TP_RNA.flow.per.100000 <- as.numeric(dat$TP_RNA.flow.per.100000)
 dat$TP_percentage.in.SR <- as.numeric(dat$TP_percentage.in.SR)
-
-#fix the population per km^2 variable
-dat <- dat %>% mutate(MN_popperkm2 = MN_pop/MN_sizekm2)
 
 #check the structure again
 str(dat)
@@ -378,43 +377,76 @@ data_frame2 <- rnaWeighting(used_dates)
 
 mean(data_frame2$`Adjusted mean RNA flow per 100000`, na.rm = TRUE)
 
-rnaWeighting2 <- function(used_dates) {
-  dates <- unique(used_dates$newdate) #create a list of all dates
-  adjusted_means <- numeric(length(dates)) #create a vector of zeros that is equal in length to the number of dates
+#rnaWeighting2 <- function(used_dates) {
+#  dates <- unique(used_dates$newdate) #create a list of all dates
+#  adjusted_means <- numeric(length(dates)-1) #create a vector of zeros that is equal in length to the number of dates
   
-  non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
-  non_na_data2 <- non_na_data[!is.na(non_na_data$TP_percentage.in.SR),]
-  non_na_data2$TP_percentage.in.SR <- as.double(non_na_data2$TP_percentage.in.SR)
-  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 *    non_na_data2$TP_percentage.in.SR) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
+#  non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
+#  non_na_data2 <- non_na_data[!is.na(non_na_data$TP_percentage.in.SR),]
+#  non_na_data2$TP_percentage.in.SR <- as.double(non_na_data2$TP_percentage.in.SR)
+#  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 *    non_na_data2$TP_percentage.in.SR) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
   
-  sr_frame <- data.frame()
-  for (i in 1:length(adjusted_means)) {
-    day_data <- filter(non_na_data2, newdate == dates[i])
-    df1 <- day_data[!duplicated(day_data[,c("SR_name","TP_code")]),]
+#  sr_frame <- data.frame()
+#  for (i in 1:length(adjusted_means)) {
+#    day_data <- filter(non_na_data2, newdate == dates[1])
+#    day_data2 <- filter(non_na_data2, newdate == dates[2])
+#    df1 <- day_data[!duplicated(day_data[,c("SR_name","TP_code")]),]
     
-    df2 <- day_data[!duplicated(day_data[,"MN_name"]),]
-    reported_total <- tapply(df2$MN_total.reported, list(Municipalities = df2$SR_name), sum)
+#    df2 <- day_data[!duplicated(day_data[,c("SR_name","MN_name")]),]
+#    df2_2 <- day_data2[!duplicated(day_data[,c("SR_name","MN_name")]),]
     
-    regions <- unique(df1$SR_name)
-    rna_totals <- tapply(df1$adjusted_RNA_flow, list(Regions = df1$SR_name), sum, na.rm = TRUE)
-    day_frame <- data.frame(Date = rep(dates[i], length(rna_totals)), Region = regions, RNA_total = rna_totals, Reported_total = reported_total)
-    sr_frame <- rbind(sr_frame, day_frame)
-  }
+#    reported_total <- tapply(df2_2$MN_total.reported, list(Municipalities = df2_2$SR_name), sum) - tapply(df2$MN_total.reported, list(Municipalities = df2$SR_name), sum)
+    
+#    regions <- unique(df1$SR_name)
+#    rna_totals <- tapply(df1$adjusted_RNA_flow, list(Regions = df1$SR_name), sum, na.rm = TRUE)
+#    day_frame <- data.frame(Date = rep(dates[i], length(rna_totals)), Region = regions, RNA_total = rna_totals, Reported_total = reported_total)
+#    sr_frame <- rbind(sr_frame, day_frame)
+#  }
   
      #create a plot of the increase per 100.000 inhabitants over time
-  day_totals <- tapply(sr_frame$RNA_total, list(Dates = sr_frame$Date), sum)
-   barplot(day_totals, 
-                  main = "RNA flow per 100.000 inhabitants in The Netherlands over time", 
-                  xlab = "Date", 
-                  ylab = "RNA flow per 100.000 inhabitants")
+#  day_totals <- tapply(sr_frame$RNA_total, list(Dates = sr_frame$Date), sum)
+#   barplot(day_totals, 
+#                  main = "RNA flow per 100.000 inhabitants in The Netherlands over time", 
+#                  xlab = "Date", 
+#                  ylab = "RNA flow per 100.000 inhabitants")
   
-  return(sr_frame)
+#  return(sr_frame)
+#}
+
+#data_frame3 <- rnaWeighting2(used_dates)
+#data_frame3$Region <- rownames(data_frame3)
+#rownames(data_frame3) <- NULL
+#data_frame3
+
+newCalculator <- function(used_dates) {
+  sr_frame <- data.frame()
+  dates <- unique(used_dates$newdate) #extract a vector of dates
+  regions <- unique(used_dates$SR_name) #extract a vector of all security regions
+  used_dates$adjusted_RNA_flow <- (used_dates$TP_RNA.flow.per.100000 *  used_dates$TP_percentage.in.SR)
+  
+  for (i in 1:(length(dates)-1)) {
+    step1 <- filter(used_dates, newdate == dates[i]) #filter the data for date 1
+    step2 <- filter(used_dates, newdate == dates[i+1]) #filter the data for the day after the current day
+  
+    for (j in 1:length(regions)) {
+      r1_data <- filter(step1, SR_name == regions[j]) #filter all data for a given region on the first day
+      r2_data <- filter(step2, SR_name == regions[j]) #filter all data for a given region on the second day
+    
+      df1 <- r1_data[!duplicated(r1_data[,"MN_name"]),] #delete all duplicate municipality rows
+      df2 <- r2_data[!duplicated(r2_data[,"MN_name"]),] #delete all duplicate municipality rows on the second day
+    
+      increase <- sum(df2$MN_total.reported, na.rm = TRUE) - sum(df1$MN_total.reported, na.rm = TRUE)
+      rna_flow <- sum(r2_data$adjusted_RNA_flow)
+      r_frame <- data.frame(Date = dates[i+1], Region = regions[j], Increase = increase, RNA.flow = rna_flow)
+      sr_frame <- rbind(sr_frame, r_frame)
+    }
+  }
+  non_na_frame <- sr_frame[complete.cases(sr_frame),]
+  return(non_na_frame)
 }
 
-data_frame3 <- rnaWeighting2(used_dates)
-rownames(data_frame3) <- NULL
-data_frame3
-
+good_frame <- newCalculator(used_dates)
+good_frame
 ```
 
 
@@ -549,3 +581,41 @@ used_dates$MN_pop <- used_dates$MN_pop * 1000
 
 ```
 
+#Step 6: Correlations over the period 8th of September till 10th of november
+```{r}
+corCalculator <- function(good_frame, used_dates) {
+  dates <- unique(good_frame$Date)
+  regions <- unique(used_dates$SR_name)
+  cor_frame <- data.frame()
+  
+  for (i in 1:(length(dates)-7)) {
+    day1 <- filter(good_frame, Date == dates[i]) #filter data for the first day
+    day2 <- filter(good_frame, Date == dates[i+7]) #filter data for 7 days later
+    day_frame <- data.frame()
+    observations <- 0
+  
+    for (j in 1:length(regions)) {
+      dat1 <- filter(day1, Region == regions[j])
+      dat2 <- filter(day2, Region == regions[j])
+      if (nrow(dat1) == 1 && nrow(dat2) == 1) {
+        observations <- observations + 1
+        d_frame <- data.frame(Region = regions[j], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
+        day_frame <- rbind(day_frame, d_frame)
+      } else {
+        next
+      }
+    }
+    cor_f <- data.frame(Date = dates[i+7], Correlation = cor(day_frame$Reported, day_frame$RNA.flow), Observations = observations)
+    cor_frame <- rbind(cor_frame, cor_f)
+  }
+  return(cor_frame)
+}
+
+correlation_frame <- corCalculator(good_frame, used_dates)
+correlation_frame
+mean(correlation_frame$Correlation, na.rm = TRUE)
+
+corr_frame <- correlation_frame[complete.cases(correlation_frame),]
+corr_frame$Date <- as.Date(corr_frame$Date)
+plot(x = corr_frame$Date, y = corr_frame$Correlation)
+```
