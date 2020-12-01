@@ -25,3 +25,32 @@ newCalculator <- function(used_dates) {
 }
 
 good_frame <- newCalculator(used_dates)
+
+#Function to calculate correlations
+corCalculator <- function(good_frame, used_dates) {
+  dates <- unique(good_frame$Date)
+  regions <- unique(used_dates$SR_name)
+  cor_frame <- data.frame()
+  
+  for (i in 1:(length(dates)-7)) {
+    day1 <- filter(good_frame, Date == dates[i]) #filter data for the first day
+    day2 <- filter(good_frame, Date == dates[i+7]) #filter data for 7 days later
+    day_frame <- data.frame()
+  
+    for (j in 1:length(regions)) {
+      dat1 <- filter(day1, Region == regions[j])
+      dat2 <- filter(day2, Region == regions[j])
+      if (nrow(dat1) == 1 && nrow(dat2) == 1) {
+        d_frame <- data.frame(Region = regions[j], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
+        day_frame <- rbind(day_frame, d_frame)
+      } else {
+        next
+      }
+    }
+    cor_f <- data.frame(Date = dates[i+7], Correlation = cor(day_frame$Reported, day_frame$RNA.flow))
+    cor_frame <- rbind(cor_frame, cor_f)
+  }
+  return(cor_frame)
+}
+
+corCalculator(good_frame, used_dates)
