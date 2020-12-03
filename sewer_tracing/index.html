@@ -11,7 +11,7 @@
         text-align: center;
     }
 
-    #center_text, #center_text2 {
+    #center_text, #center_text2, #center_text3, #center_text4 {
         margin: auto;
         width: 50%;
         text-align: left;
@@ -34,8 +34,8 @@
         <ol>
             <li>Introduction</li>
             <li>Problem</li>
-            <li>Solution</li>
-            <li>Conclusion</li>
+            <li>Methodology</li>
+            <li>Results</li>
             <li>References</li>
         </ol>
     </div>
@@ -58,12 +58,60 @@
         <img id = "infection_graph" src = 'infection_graph.PNG' alt = 'Number of infections per day'>
     </div>
 
-    <div>
-        <h2 id = "center_title3">The solution</h2>
+    <div id = "center_text3">
+        <h2 id = "center_title3">Methodology</h2>
+        <h3>Step1</h3>
+        <p></p>
+
+        <h3>Step2</h3>
+        <p></p>
+
+        <h3>Step3</h3>
+        <p></p>
+
+        <h3>Step4</h3>
+        <p></p>
+
+        <h3>Relation between RNA flow and increase in number of infections</h3>
+        <p>Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of
+        infections. More specifically, we want to investigate this on the level of the security regions. To achieve this, the current
+        functions for calculating the RNA flow and increase in number of infections per day will be altered so that these values are
+        reported for each security region per day. Subsequently, the RNA flow from one day will be taken and the increase in the number
+        of infections from 7 days later. The reason for this is that there is generally a 7 day time lag between getting COVID (showing
+        up in the sewage water) and getting a positive test. A scatterplot with the aforementioned data should provide a first impression
+        of how they are related to each other. Since not every security region has data about the RNA flow on the first day, and data
+        about the increase in the number of infections 7 days later, only security regions that have data for both days are selected.
+        Subsequently, the correlation for those data will be calculated.</p>
+
+        <h3>Correlations over the period of September till November</h3>
+        <p>In the final step of investigating the relationship between the RNA flow and the increase in the number of infections, the
+        analysis conducted in the previous part is extended to the period of September till November. For each available combination
+        of days (i.e. available combination of one date and the date 7 days later), the correlation between the RNA flow on the first
+        day and the increase in infections 7 days later will be recorded. Finally, all the correlations will be plotted over the period
+        in a scatterplot.</p>
     </div>
 
-    <div>
-        <h2 id = "center_title4">Conclusion</h2>
+    <div id = "center_text4">
+        <h2 id = "center_title4">Results</h2>
+        <p>Figure ?? shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections
+        on the 15th of september. As can been seen from the scatterplot, these data do not seem to have a strong relationship with each
+        other. Additionally, the correlation associated with this scatterplot is 0.027 which shows that these data almost show no
+        relationship between each other. This strikes us as very interesting, since one would expect a relationship between the rna
+        flow and the increase in the number of infections. Therefore, the analysis conducted in this step has been extended to the
+        period of September till November.</p>
+        <img src = "relation_graph_day1.PNG" alt = "Relation between rna flow and increase in infections for one day">
+
+        <p>To see the full extent of the relationship between the RNA flow and the increase in the number of infections, correlations
+        between the two variables have been recorded for the full period of September till November. These correlations are subsequently
+        plotted in a scatterplot and the mean correlation is calculated. The scatterplot can been seen below.</p>
+        <img src = "full_period_correlation.PNG" alt = "Correlations over the period September till November">
+
+        <p>The scatterplot shows that the correlations fluctuate over the period, which seems very interesting. If the correlations
+        would have formed a straight horizontal line, then the estimation of the true number of infections in the Netherlands would have
+        been easy since the relationship between the RNA flow and the increase in infections would have been the same every day. The mean
+        correlation associated with this scatterplot is 0.33 which is a relatively good correlation. This means that as the pandemic
+        progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. This would
+        hopefully make it easier to estimate the true number of infections in the Netherlands.</p>
     </div>
 
     <div>
