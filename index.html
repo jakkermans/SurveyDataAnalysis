@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tracing COVID-19 in the sewers</title>
+</head>
+<style>
+    #center_title, #center_title2, #center_title3, #center_title4, #center_title5 {
+        margin: auto;
+        width: 50%;
+        text-align: center;
+    }
+
+    #center_text, #center_text2, #center_text3, #center_text4 {
+        margin: auto;
+        width: 50%;
+        text-align: left;
+    }
+
+    #left_box {
+        width: 25%;
+        float: left;
+        height: 150px;
+    }
+
+    #infection_graph, #infection_graph2, #infection_graph3, #infection_graph4, #infection_graph5, #infection_graph6, #infection_graph7 {
+        width: 95%;
+    }
+
+</style>
+<body>
+    <div id = "left_box">
+        <h3>Structure of the page</h3>
+        <ol>
+            <li>Introduction</li>
+            <li>Problem</li>
+            <li>Methodology</li>
+            <li>Results</li>
+            <li>References</li>
+        </ol>
+    </div>
+    <div id = "center_text">
+        <h1 id = "center_title">Introduction</h1>
+        <p>In December 2019, a virus known as SARS-Cov-2 (COVID-19) initiated in Wuhan, China. This variant of the SARS coronavirus, which
+        shocked the world in 2003, caused a worldwide pandemic with many consequences. However, this virus is more dangerous since 20 to 40%
+        of the patients show no symptoms, contributing to the silent spread of the virus (Vallejo et al., 2019). </p>
+
+        <p>Although patients do
+        not always show symptoms of the virus, they do leave RNA particles of the virus in their faeces as shown by for example
+        Pan et al. (2020). The virus can sustain itself for a long period of itself within the feaces, in some cases even one or more
+        months after the respective patient has tested negative for RNA particles in their feaces (Vallejo et al., 2019). Therefore,
+        the amount of RNA particles could be an indicator of the true number of COVID-19 patients within a country or municipality.</p>
+    </div>
+
+    <div id = "center_text2">
+        <h2 id = "center_title2">The problem</h2>
+        <p>Graph 1 shows the number of infections per day:</p>
+        <img id = "infection_graph" src = 'infection_graph.PNG' alt = 'Number of infections per day'>
+    </div>
+
+    <div id = "center_text3">
+        <h2 id = "center_title3">Methodology</h2>
+        <h3>Step 1 - The number of infections in the Netherlands</h3>
+        <p>Before taking on the task of predicting the total number of infections in the Netherlands on a given day from the RNA
+           particles in the sewage, we have aggregated the data on the number of reported infections in a municipality on a given
+           day to the total number of reported infections on that day in The Netherlands as a whole. To achieve this, we made a
+           function that takes the data as input. Then, for every day, the function first gets rid of any duplicate municipalities
+           that are due to multiple sewage installation inputs for one municipality, and then sums the number of reported infections
+           on a given day over all municipalities. The resulting output is visualized in Figure 1a, where you can see the total
+           number of infections we have had over time in the Netherlands. The second wave is also clearly visibly, where you see
+           the number of total infections increasing more rapidly in October compared to September.
+        </p>
+        <img id = "infection_graph2" src = "fig%201a.png" alt = "Number of infections per day in the Netherlands">
+
+        <p>However, we were also interested in the daily fluctuations of the number of infections in the Netherlands.
+           Therefore we altered the function that we had so that it would subtract the summed total number of infections of the
+           previous from the summed number of infections of the day we wanted to know the increase for. After looping the function
+           through every day in our dataset, the results are visualized in Figure 1b. </p>
+        <img id = "infection_graph3" src = "fig%201b.png" alt = "Number of increased infections per day">
+
+        <h3>Step 2 – The number of infections per 100,000 inhabitants in The Netherlands</h3>
+        <p>Next, we visualized the number of cases per 100,000 inhabitants of The Netherlands. Again, we decided to do this for
+           both the total number of infections we have had over time, as well as the daily differences. As you can see in
+           Figures 2a and 2b, the shape of the distribution is the same, but the scale on the y-axis is different. This is
+           expected, as we took the functions of the previous step and multiplied the total number of reported infections by
+           the number of inhabitants of the municipality divided by 100,000.</p>
+        <img id = "infection_graph4" src = "fig%202a.png" alt = "Figure 2a">
+        <img id = "infection_graph5" src = "fig%202b.png" alt = "Figure 2b">
+
+        <h3>Step3</h3>
+        <p>We saw that the number of COVID infections had been increasing since the beginning of September and peaked in October.
+           One would expect that the amount of RNA particles in the sewage water increases with the number of COVID infections.
+           In the figure below, the mean number of RNA particles per sewage water installation for every day is plotted. The plot
+           does not really look the same as the plot of the COVID infections. This could be due to the fact that on some days there
+           were less particles in the installations because it had rained more, but we do not have an answer yet.</p>
+        <img id = "infection_graph6" src = "plot%20step3.png" alt = "Figure 3">
+
+        <h3>Step4</h3>
+        <p>In the figure below the total number of RNA particles in the sewage water per day is plotted. The shape of this plot
+           is different from the plot showing the mean number of particles per installation. This is due to the fact that the
+           number of installations from which a sample is taken differs each day.</p>
+        <img id = "infection_graph7" src = "plot%20step%204.png" alt = "Figure 4">
+
+        <h3>Step 5 - Relation between RNA flow and increase in number of infections</h3>
+        <p>Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of
+        infections. More specifically, we want to investigate this on the level of the security regions. To achieve this, the current
+        functions for calculating the RNA flow and increase in number of infections per day will be altered so that these values are
+        reported for each security region per day. Subsequently, the RNA flow from one day will be taken and the increase in the number
+        of infections from 7 days later. The reason for this is that there is generally a 7 day time lag between getting COVID (showing
+        up in the sewage water) and getting a positive test. A scatterplot with the aforementioned data should provide a first impression
+        of how they are related to each other. Since not every security region has data about the RNA flow on the first day, and data
+        about the increase in the number of infections 7 days later, only security regions that have data for both days are selected.
+        Subsequently, the correlation for those data will be calculated.</p>
+
+        <h3>Step 6 - Correlations over the period of September till November</h3>
+        <p>In the final step of investigating the relationship between the RNA flow and the increase in the number of infections, the
+        analysis conducted in the previous part is extended to the period of September till November. For each available combination
+        of days (i.e. available combination of one date and the date 7 days later), the correlation between the RNA flow on the first
+        day and the increase in infections 7 days later will be recorded. Finally, all the correlations will be plotted over the period
+        in a scatterplot.</p>
+    </div>
+
+    <div id = "center_text4">
+        <h2 id = "center_title4">Results</h2>
+        <p>Figure ?? shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections
+        on the 15th of september. As can been seen from the scatterplot, these data do not seem to have a strong relationship with each
+        other. Additionally, the correlation associated with this scatterplot is 0.027 which shows that these data almost show no
+        relationship between each other. This strikes us as very interesting, since one would expect a relationship between the rna
+        flow and the increase in the number of infections. Therefore, the analysis conducted in this step has been extended to the
+        period of September till November.</p>
+        <img src = "relation_graph_day1.PNG" alt = "Relation between rna flow and increase in infections for one day">
+
+        <p>To see the full extent of the relationship between the RNA flow and the increase in the number of infections, correlations
+        between the two variables have been recorded for the full period of September till November. These correlations are subsequently
+        plotted in a scatterplot and the mean correlation is calculated. The scatterplot can been seen below.</p>
+        <img src = "full_period_correlation.PNG" alt = "Correlations over the period September till November">
+
+        <p>The scatterplot shows that the correlations fluctuate over the period, which seems very interesting. If the correlations
+        would have formed a straight horizontal line, then the estimation of the true number of infections in the Netherlands would have
+        been easy since the relationship between the RNA flow and the increase in infections would have been the same every day. The mean
+        correlation associated with this scatterplot is 0.33 which is a relatively good correlation. This means that as the pandemic
+        progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. This would
+        hopefully make it easier to estimate the true number of infections in the Netherlands.</p>
+    </div>
+
+    <div>
+        <h2 id = "center_title5">References</h2>
+        <ul>
+            <li>Vallejo, J. A., Rumbo-Feal, S., Conde-Pérez, K., López-Oriona, Á., Tarrío, J., Reif, R., ... & Veiga, M. C. (2020). Highly predictive regression model of active cases of COVID-19 in a population by screening wastewater viral load. medRxiv.</li>
+            <li>Pan, Y., Zhang, D., Yang, P., Poon, L. L. M. & Wang, Q. Viral load of SARSCoV-2 in clinical samples. The Lancet. Infectious diseases 20, 411-412,
+                doi:10.1016/s1473-3099(20)30113-4 (2020). </li>
+        </ul>
+    </div>
+</body>
+</html>
