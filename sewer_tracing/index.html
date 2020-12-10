@@ -15,27 +15,37 @@
         margin: auto;
         width: 50%;
         text-align: left;
+        background-color: antiquewhite;
+        margin-top: 20px;
+        padding: 10px;
+        border-radius: 25px;
     }
 
     #left_box {
-        width: 25%;
+        width: 20%;
         float: left;
         height: 150px;
+        padding: 5px;
+        border-radius: 25px;
+        background-color: antiquewhite;
     }
 
-    #infection_graph {
+    #infection_graph, #infection_graph2, #infection_graph3, #infection_graph4, #infection_graph5, #infection_graph6, #infection_graph7 {
         width: 95%;
+    }
+
+    body {
+        background-color: blue;
     }
 
 </style>
 <body>
-    <div id = "left_box">
+    <div id = "left_box" style="top: 10px; position: fixed">
         <h3>Structure of the page</h3>
         <ol>
             <li>Introduction</li>
-            <li>Problem</li>
-            <li>Methodology</li>
-            <li>Results</li>
+            <li>The data</li>
+            <li>Methods and preliminary results</li>
             <li>References</li>
         </ol>
     </div>
@@ -53,65 +63,119 @@
     </div>
 
     <div id = "center_text2">
-        <h2 id = "center_title2">The problem</h2>
-        <p>Graph 1 shows the number of infections per day:</p>
-        <img id = "infection_graph" src = 'infection_graph.PNG' alt = 'Number of infections per day'>
+        <h2 id = "center_title2">The data</h2>
+
+        <h3>Structure of the data</h3>
+        <p>We are working with two datasets, both collected by the National Institute for Public Health and the Environment (RIVM).
+           The first dataset contains the total number of positive tests reported per day per municipality. It also contains
+           information on key characteristics of the municipality, such as population density and which security region it is part
+           of. The second dataset contains data recorded on the level of sewage treatment plants. The key variable here is the
+           average concentration of SARS-CoV-2 RNA, measured in the daily amount of sewage water. This dataset also contains
+           crucial metadata of the sewage treatment plants, such as in which security region the area of responsibility of this
+           treatment plant falls. The two datasets were matched to each other by the variable in which security region a
+           municipality and a treatment plant’s area fall respectively. </p>
+
+        <h3>Challenges in the data</h3>
+        <p>Our goal is to estimate the true number of COVID-19 patients at any given day, based on the data we have available
+            escribing the RNA flow in the sewage water. To do this, we have to establish if there is a relationship between the RNA
+            flow and the number of positive tests per day. Given the data structure, we are faced with a few challenges before we
+            can take on this question. </p>
+        <p>Our goal is to estimate the true number of COVID-19 patients at any given day, based on the data we have available
+            describing the RNA flow in the sewage water. To do this, we have to establish if there is a relationship between the
+            RNA flow and the number of positive tests per day. Given the data structure, we are faced with a few challenges before
+            we can take on this question. </p>
+        <p>However, some sewage treatment plants also treat water from outside their primary security region, creating double
+            entries in the dataset and making simple matching impossible. Luckily the dataset also provides information on what
+            percentage of the water a treatment plant processes comes from which security region, so we can weight the RNA flow by
+            this variable. See SR2 of Figure 1. </p>
+        <p>Lastly, some very large municipalities produce so much sewage water in one day, that multiple treatment plants are
+            required to process it. See SR3 of Figure 1. Unfortunately, there is no data available that specifies how much of the
+            water from these large municipalities goes to which treatment plant, making it impossible to establish if there is a
+            relationship between the RNA flow and the number of positive cases on the municipality level. </p>
+        <p>We take the above relationships into account in answering our sub-questions. Furthermore, we concluded that we have
+            to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of
+            positive cases, to get an accurate indicator.  </p>
+        <img id = "infection_graph" src = 'Diagram.png' alt = 'Diagram of the plan'>
     </div>
 
     <div id = "center_text3">
-        <h2 id = "center_title3">Methodology</h2>
-        <h3>Step1</h3>
-        <p></p>
+        <h2 id = "center_title3">Methods and preliminary results</h2>
+        <h3>Step 1 - Cumulative number of total infections in the Netherlands</h3>
+        <p>Before taking on the task of predicting the total number of infections in the Netherlands on a given day from the RNA
+           particles in the sewage, we have aggregated the data on the number of reported infections in a municipality on a given
+           day to the total number of reported infections on that day in The Netherlands as a whole. To achieve this, we made a
+           function that takes the data as input. Then, for every day, the function first gets rid of any duplicate municipalities
+           that are due to multiple sewage installation inputs for one municipality, and then sums the number of reported infections
+           on a given day over all municipalities. The resulting output is visualized in Figure 2a, where you can see the total
+           number of infections we have had over time in the Netherlands. The second wave is also clearly visibly, where you see
+           the number of total infections increasing more rapidly in October compared to September.
+        </p>
+        <img id = "infection_graph2" src = "fig%202a_b.png" alt = "Number of infections per day in the Netherlands">
 
-        <h3>Step2</h3>
-        <p></p>
+        <p>However, we were also interested in the daily fluctuations of the number of infections in the Netherlands.
+           Therefore we altered the function that we had so that it would subtract the summed total number of infections of the
+           previous from the summed number of infections of the day we wanted to know the increase for. After looping the function
+           through every day in our dataset, the results are visualized in Figure 2b. </p>
+        <img id = "infection_graph3" src = "fig%202b_b.png" alt = "Number of increased infections per day">
+
+        <h3>Step 2 – The number of infections per 100,000 inhabitants in The Netherlands</h3>
+        <p>Next, we visualized the number of cases per 100,000 inhabitants of The Netherlands. Again, we decided to do this for
+           both the total number of infections we have had over time, as well as the daily differences. As you can see in
+           Figures 3a and 3b, the shape of the distribution is the same, but the scale on the y-axis is different. This is
+           expected, as we took the functions of the previous step and multiplied the total number of reported infections by
+           the number of inhabitants of the municipality divided by 100,000.</p>
+        <img id = "infection_graph4" src = "fig%203a.png" alt = "Figure 2a">
+        <img id = "infection_graph5" src = "fig%203b.png" alt = "Figure 2b">
 
         <h3>Step3</h3>
-        <p></p>
+        <p>We saw that the number of COVID infections had been increasing since the beginning of September and peaked in October.
+           One would expect that the amount of RNA particles in the sewage water increases with the number of COVID infections.
+           In the figure below, the mean number of RNA particles per 100000 inhabitants summed over all sewage water installations
+           for every day is plotted. The plot does not really look the same as the plot of the COVID infections. This could be due
+           to the fact that on some days there were less particles in the installations because it had rained more, but we do
+           not have an answer yet.</p>
+        <img id = "infection_graph6" src = "fig%204.png" alt = "Figure 3">
 
-        <h3>Step4</h3>
-        <p></p>
+        <h3>Step 4 & 5 - Relation between RNA flow and increase in number of infections</h3>
+        <p>There is another issue with the data. Some installations process water from multiple security regions, therefore rendering
+        the current RNA flow unrepresentative. Fortunately, there is a column in the dataset that contains the proportion of water
+        from the security region processed by that respective installation. Therefore, these two columns are multiplied to create
+        a representative RNA flow.</p>
 
-        <h3>Relation between RNA flow and increase in number of infections</h3>
         <p>Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of
         infections. More specifically, we want to investigate this on the level of the security regions. To achieve this, the current
         functions for calculating the RNA flow and increase in number of infections per day will be altered so that these values are
         reported for each security region per day. Subsequently, the RNA flow from one day will be taken and the increase in the number
-        of infections from 7 days later. The reason for this is that there is generally a 7 day time lag between getting COVID (showing
-        up in the sewage water) and getting a positive test. A scatterplot with the aforementioned data should provide a first impression
-        of how they are related to each other. Since not every security region has data about the RNA flow on the first day, and data
-        about the increase in the number of infections 7 days later, only security regions that have data for both days are selected.
-        Subsequently, the correlation for those data will be calculated.</p>
+        of infections from seven days later. The reason for this is that there is generally a seven day time lag between a person
+        contracting COVID and leaving RNA particles in the sewage water and getting a positive test. A scatterplot with the
+        aforementioned data should provide a first impression of how they are related to each other. Since not every security
+        region has data about the RNA flow on the first day, and data about the increase in the number of infections seven days later,
+        only security regions that have data for both days are selected. Subsequently, the correlation for those data will be
+        calculated.</p>
+        <img src = "fig%205.PNG" alt = "Relation between RNA flow and increase in infections for one day">
 
-        <h3>Correlations over the period of September till November</h3>
-        <p>In the final step of investigating the relationship between the RNA flow and the increase in the number of infections, the
-        analysis conducted in the previous part is extended to the period of September till November. For each available combination
-        of days (i.e. available combination of one date and the date 7 days later), the correlation between the RNA flow on the first
-        day and the increase in infections 7 days later will be recorded. Finally, all the correlations will be plotted over the period
-        in a scatterplot.</p>
-    </div>
-
-    <div id = "center_text4">
-        <h2 id = "center_title4">Results</h2>
-        <p>Figure ?? shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections
+        <p>Figure 5 shows the correlation between the RNA flow on the 8th of september and the increase in the number of infections
         on the 15th of september. As can been seen from the scatterplot, these data do not seem to have a strong relationship with each
         other. Additionally, the correlation associated with this scatterplot is 0.027 which shows that these data almost show no
         relationship between each other. This strikes us as very interesting, since one would expect a relationship between the rna
         flow and the increase in the number of infections. Therefore, the analysis conducted in this step has been extended to the
         period of September till November.</p>
-        <img src = "relation_graph_day1.PNG" alt = "Relation between rna flow and increase in infections for one day">
 
-        <p>To see the full extent of the relationship between the RNA flow and the increase in the number of infections, correlations
-        between the two variables have been recorded for the full period of September till November. These correlations are subsequently
-        plotted in a scatterplot and the mean correlation is calculated. The scatterplot can been seen below.</p>
-        <img src = "full_period_correlation.PNG" alt = "Correlations over the period September till November">
 
-        <p>The scatterplot shows that the correlations fluctuate over the period, which seems very interesting. If the correlations
+        <h3>Step 6 - Correlations over the period of September until November</h3>
+        <p>In the final step of investigating the relationship between the RNA flow and the increase in the number of infections, the
+        analysis conducted in the previous part is extended to the period of September till November. For each available combination
+        of days (i.e. available combination of one date and the date seven days later), the correlation between the RNA flow on the first
+        day and the increase in infections seven days later will be recorded. Finally, all the correlations will be plotted over the
+        period in a scatterplot.</p>
+        <img src = "fig%206.PNG" alt = "Correlations over the period September till November">
+
+        <p>Figure 6 shows that the correlations fluctuate over the period, which seems very interesting. If the correlations
         would have formed a straight horizontal line, then the estimation of the true number of infections in the Netherlands would have
         been easy since the relationship between the RNA flow and the increase in infections would have been the same every day. The mean
-        correlation associated with this scatterplot is 0.33 which is a relatively good correlation. This means that as the pandemic
-        progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. This would
-        hopefully make it easier to estimate the true number of infections in the Netherlands.</p>
+        correlation associated with this scatterplot is 0.33 which is a moderate positive correlation. This means that as the
+        pandemic progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger.
+        This would hopefully make it easier to estimate the true number of infections in the Netherlands.</p>
     </div>
 
     <div>
