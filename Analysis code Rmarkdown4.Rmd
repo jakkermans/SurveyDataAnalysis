@@ -662,4 +662,7 @@ mean(correlation_frame$Correlation, na.rm = TRUE)
 corr_frame <- correlation_frame[complete.cases(correlation_frame),]
 corr_frame$Date <- as.Date(corr_frame$Date)
 plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation"); abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
+########te vergelijken met installaties per dag
+barplot(corr_frame$Correlation)
+
 ```
