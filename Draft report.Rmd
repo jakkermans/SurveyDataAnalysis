@@ -161,13 +161,14 @@ all_dates <- unique(dat$newdate) #243 recorded dates, starting March 13th
 used_dates <- dat %>% filter(newdate %in% all_dates[-c(1:178)]) #dates from 7th of Sept
 
 #this function calculates the total of reported cases on one day, across all municipalities:
-totalCalculator <- function(sewer_data) {
-  dates <- unique(sewer_data$newdate) #create a list of unique dates in the dataset 
+
+totalCalculator <- function(used_dates) {
+  dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset 
   totals <- numeric(length(dates)) #make an object with the length of the number of dates
   
   #subtract nr of reported cases of the day before each day to get the difference
   for (i in 1:(length(totals))) {
-    step1 <- filter(sewer_data, newdate == dates[i]) #select date we want to calculate the nr of new cases for
+    step1 <- filter(used_dates, newdate == dates[i]) #select date we want to calculate the nr of new cases for
     
     #create data frame of the  dates, and remove duplicates (total reported per municipalities are the same across duplicates)
     df <- step1[!duplicated(step1[,"MN_name"]),] 
@@ -184,12 +185,12 @@ totalCalculator <- function(sewer_data) {
   
   #create a plot of the totals over time
   plot <- barplot(totals_frame$`Total number of reported infections`, 
-                  main = "Total number of reported infections per day", 
+                  col  = "greenyellow",
+                  main = "Figure 2a: Total number of reported infections per day in the Netherlands over time", 
                   xlab = "Date", 
                   ylab = "Total number of reported infections", 
-                  ylim = c(0,350000), 
-                  names.arg = as.Date(dates),
-                  col = 'greenyellow')
+                  ylim = c(0,400000), 
+                  names.arg = as.Date(dates))
   
   #Output a data frame with the total of new cases per day
   output = list(totals_frame, plot)
@@ -205,14 +206,14 @@ We are also interested in the daily fluctuations of the number of reported infec
 
 ```{r echo = FALSE}
 #this function calculates the difference in reported cases between one day and the day before that:
-differenceCalculator <- function(sewer_data) {
-  dates <- unique(sewer_data$newdate) #create a list of unique dates in the dataset
+differenceCalculator <- function(used_dates) {
+  dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset
   differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of        dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.  
   
   #subtract nr of reported cases of the day before each day to get the difference
   for (i in 1:(length(differences))) {
-    step1 <- filter(sewer_data, newdate == dates[i]) #select date of reference
-    step2 <- filter(sewer_data, newdate == dates[i+1]) #select date we want to calculate the number of new cases for
+    step1 <- filter(used_dates, newdate == dates[i]) #select date of reference
+    step2 <- filter(used_dates, newdate == dates[i+1]) #select date we want to calculate the nr of new cases for
     
     #create data frames of both sets of dates, and remove duplicates (total reported per municipalities are the same across duplicates)
     df1 <- step1[!duplicated(step1[,"MN_name"]),] 
@@ -231,11 +232,11 @@ differenceCalculator <- function(sewer_data) {
   
   #create a plot of the totals over time
   plot <- barplot(diff_frame$`Difference in reported infections`, 
-                  main = "Difference in reported infections compared to the previous day", 
+                  col = "greenyellow",
+                  main = "Figure 2b: Number of new reported infections per day in the Netherlands over time", 
                   xlab = "Date", 
-                  ylab = "Difference in reported infections", 
-                  names.arg = as.Date(dates[-1]), 
-                  col = 'greenyellow')
+                  ylab = "Total number of new reported infections", 
+                  names.arg = as.Date(dates[-1]))
   
   #output a data frame with new cases per day
   output = list(diff_frame, plot)
@@ -259,11 +260,12 @@ used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates
 #make a function that calculates the mean number of infection per 100.000 inhabitants per day.
 #so, this is over the Netherlands as a whole.
 totalCalculator2 <- function(used_dates) {
+  used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
   dates <- unique(used_dates$newdate) #create a list of dates
   totals <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.
   
   for (i in 1:(length(totals))) {
-        step1 <- filter(used_dates, newdate == dates[i]) #select the date we want to calculate the nr of cases per 100.000 inhabitants for
+    step1 <- filter(used_dates, newdate == dates[i]) #select the date we want to calculate the nr of cases per 100.000 inhabitants for
     
     #create data frame of the  dates, and remove duplicates (total reported per municipalities are the same across duplicates)
     df <- step1[!duplicated(step1[,"MN_name"]),] 
@@ -280,14 +282,14 @@ totalCalculator2 <- function(used_dates) {
   #and make the increase numeric
   tot_frame$`Reported infections per 100.000` <- as.numeric(tot_frame$`Reported infections per 100.000`)
   
-   #create a plot of the increase per 100.000 inhabitants over time
-   barplot(tot_frame$`Reported infections per 100.000`, 
-                  main = "Mean number of reported infections per 100.000 inhabitants over time", 
-                  xlab = "Date", 
-                  ylab = "Mean number of reported infections per 100.000 inhabitants", 
-                  names.arg = as.Date(dates[-1]),
-                  col = 'greenyellow')
-
+  #create a plot of the increase per 100.000 inhabitants over time
+  barplot(tot_frame$`Reported infections per 100.000`, 
+          col = "greenyellow",
+          main = "Figure 3a: Total number of reported infections per day per 100,000 inhabitants in the Netherlands over time", 
+          xlab = "Date", 
+          ylab = "Total number of reported infections per 100,000 inhabitants", 
+          names.arg = as.Date(dates[-1]))
+  
   return(tot_frame)
 }
 
@@ -303,7 +305,9 @@ used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates
 
 #make a function that calculates the mean number of infection per 100.000 inhabitants per day.
 #so, this is over the Netherlands as a whole.
+
 differenceCalculator2 <- function(used_dates) {
+  used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
   dates <- unique(used_dates$newdate) #create a list of dates
   differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.
   for (i in 1:(length(differences))) {
@@ -327,14 +331,14 @@ differenceCalculator2 <- function(used_dates) {
   #and make the increase numeric
   diff_frame$`Increase in reported infections per 100.000` <- as.numeric(diff_frame$`Increase in reported infections per 100.000`)
   
-   #create a plot of the increase per 100.000 inhabitants over time
-   barplot(diff_frame$`Increase in reported infections per 100.000`, 
-                  main = "Difference in reported infections per 100.000 inhabitants", 
-                  xlab = "Date", 
-                  ylab = "Difference in reported infections per 100.000 inhabitants", 
-                  names.arg = as.Date(dates[-1]),
-                  col = 'greenyellow')
-
+  #create a plot of the increase per 100.000 inhabitants over time
+  barplot(diff_frame$`Increase in reported infections per 100.000`, 
+          col = "greenyellow",
+          main = "Figure 3b: Number of new reported infections per day per 100,000 inhabitants in the Netherlands over time", 
+          xlab = "Date", 
+          ylab = "Total number of new reported infections per 100,000 inhabitants", 
+          names.arg = as.Date(dates[-1]))
+  
   return(diff_frame)
 }
 
@@ -350,8 +354,8 @@ We saw that the number of infections had been increasing since the beginning of 
 used_dates$TP_RNA.flow.per.100000 <- as.numeric(used_dates$TP_RNA.flow.per.100000)
 
 virusCalculator_new <- function(used_dates) {
-  #creates a vector containing the unique values of the dates column of data. So vector with dates from September the seventh
-  #till October the tenth
+  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
+  #till october the tenth
   dates <- unique(used_dates$newdate)
   #makes an empty numeric vector which length is equal to number of dates
   means <- numeric(length(dates))
@@ -370,12 +374,8 @@ virusCalculator_new <- function(used_dates) {
   #coerce the column into double precision vector.
   means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
   #create a barplot 
-  barplot(means_frame$`Mean RNA flow per 100000`, 
-          col='greenyellow', 
-          main = 'Mean RNA flow per 100,000 per day', 
-          xlab = 'Date', 
-          ylab = 'Mean RNA flow per 100,000', 
-          names.arg = dates)
+  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', main = 'Figure 4: Mean RNA flow per 100,000 inhabitants in the Netherlands per day', 
+          xlab = 'Date', ylab = 'Mean RNA flow per 100,000 inhabitants', names.arg = dates)
   return(means_frame)
 }
 
