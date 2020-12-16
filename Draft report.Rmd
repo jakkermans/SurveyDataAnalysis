@@ -16,7 +16,7 @@ library(tidyverse)
 
 Set working directory and load data
 ```{r}
-setwd("C:/Users/lasto/OneDrive/Documents/Masters/Rwork/Survey")
+setwd("D:/Master Utrecht/Survey Data Analysis/Final project")
 dat <- readRDS("covid cases waste + tests.RDS")
 ```
 
@@ -155,7 +155,7 @@ We work towards our goal through asking and answering several sub-questions. The
 
 In order to answer this question we need a function that calculates the number of total reported infections per day. We wrote a function to aggregate the data by the number of reported infections in a municipality on a given day to the total number of reported infections on that day in the Netherlands as a whole, discarding double entries per municipality. The resulting output is visualized in the figure below, where you can see the total number of reported infections we have had over time in the Netherlands. The second wave is also clearly visible, where you see the total number of reported infections increasing more rapidly in October compared to September. 
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 #create dataframe with only the observations from 7th of September onward
 all_dates <- unique(dat$newdate) #243 recorded dates, starting March 13th
 used_dates <- dat %>% filter(newdate %in% all_dates[-c(1:178)]) #dates from 7th of Sept
@@ -204,7 +204,7 @@ totalCalculator(used_dates)
 
 We are also interested in the daily fluctuations of the number of reported infections in the Netherlands. To show this, we altered the function such that it would calculate the difference in total reported cases between each day and the day before. The results are visualized in the following figure. We see that the peak of new infections in the second wave is somewhere in the end of October, as we would expect from the previous figure.  
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 #this function calculates the difference in reported cases between one day and the day before that:
 differenceCalculator <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset
@@ -250,7 +250,7 @@ differenceCalculator(used_dates)
 
 Next, we visualized the number of reported cases per 100,000 inhabitants of the Netherlands. Again, we decided to do this for both the total number of infections we have had over time, as well as the daily differences. As you can see in the figures below, the shape of the distribution is the same, but the scale on the y-axis is different. This is expected, as we took the functions of the previous step and multiplied the total number of reported infections by the number of inhabitants of the municipality divided by 100,000.
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 #in the data preparation, we already multiplied the municipality population by 1000,
 #so no need to do that again.
 #however, we do need make a new variable containing the number of cases per 100.000 people
@@ -296,7 +296,7 @@ totalCalculator2 <- function(used_dates) {
 totalCalculator2(used_dates)
 ```
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 #in the data preparation, we already multplied the municipality population by 1000,
 #so no need to do that again.
 #however, we do need make a new variable containing the number of cases per 100.000 people
@@ -349,7 +349,7 @@ differenceCalculator2(used_dates)
 
 We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we have visualized the distribution of the RNA particles in the Netherlands over time. In the figure below, the mean number of RNA particles per 100,000 inhabitants summed over all sewage water installations for every day is plotted. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. 
 
-```{r echo = FALSE}
+```{r fig.width=10, echo = FALSE}
 
 used_dates$TP_RNA.flow.per.100000 <- as.numeric(used_dates$TP_RNA.flow.per.100000)
 
@@ -381,9 +381,10 @@ virusCalculator_new <- function(used_dates) {
 
 data_frame2 <- virusCalculator_new(used_dates)
 ```
+
 The reason for the different shapes of the plot showing the mean RNA flow and the plot showing the increase in infections could be the fact that not all treatment plants report the RNA flow every day, and that the number of reporting treatment plants differs per day and per region. In order to explore this idea we plotted the number of installations from which a sample was taken over time. The figure below shows that the number of installations from which a sample is taken differs per day. The figure also shows that the maximum number of sewage water installations from which samples are taken lies somewhere around one hundred. Since there are more than three hundred installations from which a sample can be taken (RIVM, 2020), there is not a single day where a sample is taken from all installations. So every day, samples are taken from different installations that process waste water from different regions. If every region produced the same amount of RNA particles it would not matter that we do not observe each installation each day. Since we take the mean of the amount of RNA particles, the estimate would not be harmed by a missing installation. However, the figure that shows the mean number of RNA particles observed each day suggests that the estimate of the mean number of RNA particles is not correct. If it were correct, then the values would not fluctuate as much as they do now and would follow the trend of new infections more clearly. Thus, the plot supports our claim that the different shapes of the plot showing the mean RNA flow and the plot showing the increase in infections could be explained by the fact that not all treatment plants report the RNA flow every day, and that the number of reporting treatment plants differs per day and per region.
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 totalCalculator_installations <- function(sewer_data) {
   dates <- unique(sewer_data$newdate) #create a list of unique dates in the data set 
   totals <- numeric(length(dates)) #make an object with the length of the number of dates
@@ -418,7 +419,7 @@ As mentioned in the data description, some installations process water from mult
 Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of infections on the level of the security regions. To achieve this, we altered the current functions for calculating the RNA flow and increase in number of infections per day so that these values are reported for each security region per day. Subsequently, we compared the RNA flow from one day to the increase in the number of reported infections from seven days later. The reason for this is that there is generally a seven-day time lag between a person contracting COVID – leaving RNA particles in the sewage water – and getting a positive test (Peccia et al., 2020). A scatterplot with the aforementioned data should provide a first impression of how they are related to each other. Since not every security region has data about the RNA flow on any given day and data about the increase in the number of infections seven days later, only security regions that have data for both days are selected. Subsequently, the correlation for those data is calculated.
 
 
-```{r echo = FALSE}
+```{r fig.width = 10, echo = FALSE}
 rnaWeighting <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of all dates
   adjusted_means <- numeric(length(dates)) #create a vector of zeros that is equal in length to the number of dates
@@ -482,16 +483,7 @@ newCalculator <- function(used_dates) {
 
 good_frame <- newCalculator(used_dates)
 good_frame
-```
 
-Figure 5 shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
-
-
-### 5. How does this relationship look over time? 
-
-We calculated the correlation between the RNA flow on the first day and the increase in infections seven days later for each available combination of days (i.e. available combination of one date and the date seven days later). Finally, we plotted all the correlations over the period in a scatterplot.
-
-```{r echo = FALSE}
 good_dates <- unique(good_frame$Date) #extract a list of the dates in the dataframe
 day1 <- filter(good_frame, Date == good_dates[1]) #extract the data of the first day, i.e. 8th of september
 day2 <- filter(good_frame, Date == good_dates[8]) #extract the data of increase in infections 7 days later, i.e. 15th of september
@@ -506,12 +498,15 @@ for (i in 1:(length(regions))) {
   }
 }
 
-plot(day_frame$RNA.flow, day_frame$Reported, col = "red", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections"); abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
+plot(day_frame$RNA.flow, day_frame$Reported, col = "red", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections", main = "Figure 5: Relation between RNA flow and increase in infections for one timestamp"); abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
 cor(x= day_frame$RNA.flow, y = day_frame$Reported)
 ```
 
-### Step 6: Correlations over the period 8th of September till 10th of november
-```{r echo = FALSE}
+Figure 5 shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
+
+
+### Step 5: Correlations over the period 8th of September till 10th of november
+```{r fig.width = 10,echo = FALSE}
 corCalculator <- function(good_frame, used_dates) {
   dates <- unique(good_frame$Date)
   regions <- unique(used_dates$SR_name)
@@ -546,7 +541,7 @@ mean(correlation_frame$Correlation, na.rm = TRUE)
 
 corr_frame <- correlation_frame[complete.cases(correlation_frame),]
 corr_frame$Date <- as.Date(corr_frame$Date)
-plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation"); abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
+plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation", main = "Figure 6: Correlations between RNA flow and increase in infections over time"); abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
 ```
 
 Figure 6 shows that the correlations fluctuate over time, which seems very interesting. If the data points would have formed a straight horizontal line, the estimation of the true number of infections in the Netherlands would have been more straightforward, since it would mean that the relationship between the RNA flow and the increase in infections would have been the same for every day. The mean correlation between the datapoints in this scatterplot is 0.33, which is a moderate positive correlation. This means that as the pandemic progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. We have two hypotheses as to why this would be the case: it could be a result of increased consistency and precision in the measurements as we get more rigorous in reporting these data, or – as the number of cases has only increased over the period we analysed – it could mean that RNA flow becomes a better predictor of the total number of reported cases, as both measures have higher values. 
