@@ -12,11 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load packages, include=FALSE}
 library(dplyr)
 library(tidyverse)
+library(DescTools)
 ```
 
 Set working directory and load data
 ```{r}
-setwd("D:/Master Utrecht/Survey Data Analysis/Final project")
+setwd("D:/Master Utrecht/Survey Data Analysis/SurveyDataAnalysis-main/")
 dat <- readRDS("covid cases waste + tests.RDS")
 ```
 
@@ -159,6 +160,8 @@ In order to answer this question we need a function that calculates the number o
 #create dataframe with only the observations from 7th of September onward
 all_dates <- unique(dat$newdate) #243 recorded dates, starting March 13th
 used_dates <- dat %>% filter(newdate %in% all_dates[-c(1:178)]) #dates from 7th of Sept
+used_dates$TP_RNA.flow.per.100000.locf <- LOCF(used_dates$TP_RNA.flow.per.100000)
+used_dates$TP_percentage.in.SR.locf <- LOCF(used_dates$TP_percentage.in.SR)
 
 #this function calculates the total of reported cases on one day, across all municipalities:
 
@@ -427,7 +430,7 @@ rnaWeighting <- function(used_dates) {
   non_na_data <- used_dates[!is.na(used_dates$TP_RNA.flow.per.100000),] #just for now eliminate NA rows
   non_na_data2 <- non_na_data[!is.na(non_na_data$TP_percentage.in.SR),]
   non_na_data2$TP_percentage.in.SR <- as.double(non_na_data2$TP_percentage.in.SR)
-  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000 *    non_na_data2$TP_percentage.in.SR) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
+  non_na_data2$adjusted_RNA_flow <- (non_na_data2$TP_RNA.flow.per.100000.locf *    non_na_data2$TP_percentage.in.SR.locf) #adjust rna flow by multiplying it with the proportion of water from that security region processed by that RWZI
   
   for (i in 1:length(adjusted_means)) {
     day_data <- filter(non_na_data2, newdate == dates[i])
@@ -576,11 +579,56 @@ RIVM. (2020, November 2). Rioolwateronderzoek. Retrieved from https://www.rivm.n
 Vallejo, J. A., Rumbo-Feal, S., Conde-Pérez, K., López-Oriona, Á., Tarrío, J., Reif, R., ... & Veiga, M. C. (2020). Highly predictive regression model of active cases of COVID-19 in a population by screening wastewater viral load. medRxiv.
 
 
-```{r waste bin, echo = FALSE}
-#because of this:
-#multiply by 1000 to get rid of the "." in the population variable
-#dat <- dat %>% mutate(MN_pop = MN_pop*1000)
-#I think this line in step 2 is double, so I removed it and put it here
-used_dates$MN_pop <- used_dates$MN_pop * 1000
+```{r waste bin, fig.width = 10, fig.height=10, echo = FALSE}
+#CODE TO PLOT A MAP WITH SECURITY REGIONS
+library(tibble) # better printing
+library(dplyr)  # obviously
+library(mapproj)
+library(ggplot2)
+library(hash)
 
+mun_dat <- read.csv2("municipalities_v7.csv", header = T, sep = ",") #load in municipality dataset
+mun_dat2 <- mun_dat[,c(3,4,6,7)] #select the columns municipality, province, latitude and longitude
+colnames(mun_dat2) <- c("municipality", "province", "latitude", "longitude") #assign correct columnnames
+mun_dat2 <- mun_dat2[-c(228,229),] #remove rows with incorrect coordinates
+mun_dat2$municipality <- gsub("'", "", mun_dat2$municipality)
+mun_dat3 <-subset(mun_dat2, mun_dat2$municipality %in% used_dates$MN_name)
+
+mun_dict <- hash()
+for (i in 1:nrow(used_dates)) {
+  if (used_dates[i,5] %in% keys(mun_dict)) {
+    next
+  } else {
+    mun_dict[[used_dates[i,5]]] <- used_dates[i,3]
+  }
+}
+
+mun_dat3$SR_name <- rep("X", nrow(mun_dat3))
+for (i in 1:nrow(mun_dat3)) {
+  mun_dat3[i,5] <- mun_dict[[mun_dat3[i,1]]]
+}
+
+NLD <- readRDS("gadm36_NLD_2_sp.rds")
+NLD@data %>% as_tibble()
+
+
+NLD_fixed <- subset(NLD, !NLD$NAME_1  %in% c("Zeeuwse meren", "IJsselmeer"))
+NLD_fixed <- fortify(NLD_fixed)
+
+dat2 <- used_dates %>% select(gemeente = `MN_name`, Regio = `SR_name`)
+
+names_and_numbers <- data_frame(id=rownames(NLD@data),
+                                gemeente=NLD@data$NAME_2) %>% 
+  left_join(dat2, by = "gemeente")
+
+final_map <- left_join(NLD_fixed, names_and_numbers, by = "id")
+ggplot(final_map)+
+  theme_minimal()+
+  geom_polygon( aes(x = long, y = lat, group = group),
+                color = "grey", alpha = 1/5) +
+  coord_map() +
+  scale_fill_distiller(name = "Number of people in gemeente", # change titel legend
+                       palette = "Spectral")+ # change the color scheme
+  theme(legend.position = "bottom")+
+  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), colour = SR_name))
 ```
