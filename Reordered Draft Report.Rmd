@@ -206,12 +206,12 @@ Finally, when taking a sample of the sewage water, the concentration of RNA that
 \section{Data and Methodology}
 \label{sec:datmet}
 \subsection{Structure of the data}
-We are working with two datasets, both collected by the Dutch National Institute for Public Health and the Environment (RIVM). The first dataset contains the total number of positive tests reported per day per municipality. It also contains information on key characteristics of the municipality, such as population density and which security region it is part of. The second dataset contains data recorded on the level of sewage treatment plants. The key variable here is the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage water per 100,000 inhabitants. This dataset also contains crucial metadata of the sewage treatment plants, such as in which security region the area of responsibility of this treatment plant falls. The two datasets were matched to each other by the variable in which security region a municipality and a treatment plant’s area fall respectively.
+We are working with two datasets, both collected by the Dutch National Institute for Public Health and the Environment (RIVM). The first dataset contains the total number of positive tests reported per day per municipality. It also contains information on key characteristics of the municipality, such as population density and which security region it is part of. The second dataset contains data recorded on the level of STPs. The key variable here is the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage water per 100,000 inhabitants. This dataset also contains crucial metadata of the STPs, such as in which security region the area of responsibility of this STP falls. The two datasets were matched to each other by the variable in which security region a municipality and a treatment plant’s area fall respectively.
 
 \subsection{Challenges in the data}
 Our goal is to estimate the true number of COVID-19 patients at any given day, based on the data we have available describing the RNA flow in the sewage water. To do this, we first have to establish if there is a relationship between the RNA flow and the number of positive tests per day. Given the data structure, we are faced with a few challenges before we can take on this question.
 
-First of all, the data on the number of positive tests are recorded on the level of municipalities, whereas the data on RNA flow are recorded on the treatment plant level. In the most straightforward cases, we can aggregate the RNA flow data to municipality level data by virtue that the datasets were already matched by security region code. See SR1 of Figure \ref{fig:diagram}.
+First of all, the data on the number of positive tests are recorded on the level of municipalities, whereas the data on RNA flow are recorded on the level of the STP. In the most straightforward cases, we can aggregate the RNA flow data to municipality level data by virtue that the datasets were already matched by security region code. See SR1 of Figure \ref{fig:diagram}.
 
 \begin{figure}[!hbt]
 \begin{center}
@@ -223,10 +223,14 @@ First of all, the data on the number of positive tests are recorded on the level
 \end{center}
 \end{figure}
 
-However, some sewage treatment plants also treat water from outside their primary security region, creating double entries in the dataset and making simple matching impossible. Luckily, the dataset also provides information on what percentage of the water a treatment plant processes comes from which security region, so we can weight the RNA flow by this variable. See SR2 of Figure \ref{fig:diagram}.
+However, some STPs also treat water from outside their primary security region, creating double entries in the dataset and making simple matching impossible. Luckily, the dataset also provides information on what percentage of the water a STP processes comes from which security region, so we can weight the RNA flow by this variable. See SR2 of Figure \ref{fig:diagram}.
 Furthermore, some very large municipalities produce so much sewage water in one day, that multiple treatment plants are required to process it, causing a second kind of double entries. See SR3 of Figure \ref{fig:diagram}. Unfortunately, there are no data available that specify how much of the water from these large municipalities goes to which treatment plant, making it impossible to establish if there is a relationship between the RNA flow and the number of positive cases on the municipality level.
 
-We take the above relationships into account in our analyses. Furthermore, we conclude that we have to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of positive cases, to get an accurate indicator. Lastly, the data we use in our analyses are a subset of the original dataset, because the dataset only includes all sewage treatment plants from the 7th of September onwards. 
+We take the above relationships into account in our analyses. Furthermore, we conclude that we have to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of positive cases, to get an accurate indicator. Lastly, the data we use in our analyses are a subset of the original dataset, because the dataset only includes all STPs from the 7th of September onwards. 
+
+The problem with a longitudinal study such as this one is that missing values can occur at any given point during the study. This could subsequently affect the final results in a negative way. Because of the missing data, not every security region has data on RNA flow for one day and data on reported cases seven days later. As this would be the ideal situation, the missing RNA flow data will be imputed. More specifically, Last Observation Carried Forward (LOCF) imputes the missing data due to the scope of the project. LOCF is a simple imputation method that imputes missing data for an individual by assigning the last observed value for that individual to each missing value [@cook2004marginal]. Although this does solve the problem of missing data, it is not the best imputation method and it does have some limitations.
+
+First of all, it is a conservative imputation method according to @streiner2008missing. This means that it underestimates what the missing RNA flow values would have been as this technique assumes that an individual does not change at the times of missing values. Therefore, LOCF introduces some bias in the estimates due to this underestimation. Nevertheless, it would still provide better estimates than using only the observed cases for the analyses. Second, LOCF has an ad hoc nature which means that it has no measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. This implies that no additional covariates can be included to reduce bias introduced by this imputation method. 
 
 We work towards our goal through asking and answering several sub-questions. The following section contains the analysis for answering the following questions:
 \begin{APAenumerate}
@@ -234,9 +238,9 @@ We work towards our goal through asking and answering several sub-questions. The
   \setlength{\parskip}{0pt}
    \item How does the total number of reported infections in the Netherlands as a whole develop over time? (Section \ref{sec:sub1})
    \item What does this trend look like displayed per 100,000 inhabitants of the Netherlands? (Section \ref{sec:sub2})
-   \item What is the mean level of RNA particles found in the water per 100,000 inhabitants?
-   \item What is the relationship between RNA particles and the total number of infections on one given moment?
-   \item How does this relationship look over time?
+   \item What is the mean level of RNA particles found in the water per 100,000 inhabitants? (Section \ref{sec:sub3})
+   \item What is the relationship between RNA particles and the total number of infections on one given moment? (Section \ref{sec:sub4})
+   \item How does this relationship look over time? (Section \ref{sec:sub5})
 \end{APAenumerate}
 
 \subsection{How does the total number of reported infections in the Netherlands as a whole develop over time?}
@@ -349,6 +353,7 @@ b2 <- differenceCalculator(used_dates)
 Next, we visualized the number of reported cases per 100,000 inhabitants of the Netherlands. Again, we decided to do this for both the total number of infections we have had over time, as well as the daily differences. As you can see in the figures below, the shape of the distribution is the same, but the scale on the y-axis is different. This is expected, as we took the functions of the previous step and multiplied the total number of reported infections by the number of inhabitants of the municipality divided by 100,000.
 
 \subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
+\label{sec:sub3}
 
 We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we have visualized the distribution of the RNA particles in the Netherlands over time. In the figure below, the mean number of RNA particles per 100,000 inhabitants summed over all sewage water installations for every day is plotted. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. 
 
@@ -528,6 +533,7 @@ totalCalculator_installations(used_dates)
 ```
 
 \subsection{What is the relationship between RNA particles and the total number of infections on one given moment?}
+\label{sec:sub4}
 
 As mentioned in the data description, some installations process water from multiple security regions, rendering the current RNA flow variable unrepresentative. We do have a variable available that contains the proportion of water from the security region processed by that respective installation. We multiplied these two columns to create a representative RNA flow variable.
 
@@ -627,6 +633,7 @@ plot(day_frame$RNA.flow, day_frame$Reported, col = "red", pch = 19, xlab = "RNA 
 Figure \ref{fig:7} shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
 
 \subsection{How does this relationship look over time?}
+\label{sec:sub5}
 ```{r fig.width = 10, include = FALSE}
 corCalculator <- function(good_frame, used_dates) {
   dates <- unique(good_frame$Date)
