@@ -357,15 +357,10 @@ x2 <- paste(
 b2 <- differenceCalculator(used_dates)
 ```
 
-\subsection{What does this trend look like displayed per 100,000 inhabitants of the Netherlands?}
+\subsection{What does this trend look like in the different security regions?}
 \label{sec:sub2}
 
-Next, we visualized the number of reported cases per 100,000 inhabitants of the Netherlands. Again, we decided to do this for both the total number of infections we have had over time, as well as the daily differences. As you can see in the figures below, the shape of the distribution is the same, but the scale on the y-axis is different. This is expected, as we took the functions of the previous step and multiplied the total number of reported infections by the number of inhabitants of the municipality divided by 100,000.
-
-\subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
-\label{sec:sub3}
-
-We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we have visualized the distribution of the RNA particles in the Netherlands over time. In the figure below, the mean number of RNA particles per 100,000 inhabitants summed over all sewage water installations for every day is plotted. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. 
+Next, we examined if this trend differs between the various security regions in the Netherlands. We calculated both the cumulative number of reported cases and the difference in number of reported cases per day for each of the 25 security regions. To be able to make a meaningful comparison between the different regions, we calculate these indicator per 100,000 inhabitants, as the population density differs between security regions. Below we show a selection of the resulting graphs. 
 
 ```{r fig.width = 10, include = FALSE}
 #in the data preparation, we already multiplied the municipality population by 1000,
@@ -374,103 +369,54 @@ We saw that the number of infections had been increasing since the beginning of 
 #to do that, we multiple the total number of reported cases by 100.000 divided by the municipality population and give it an informative name.
 used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
 
-#make a function that calculates the mean number of infection per 100.000 inhabitants per day.
-#so, this is over the Netherlands as a whole.
-totalCalculator2 <- function(used_dates) {
-  used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
-  dates <- unique(used_dates$newdate) #create a list of dates
-  totals <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.
-  
-  for (i in 1:(length(totals))) {
-    step1 <- filter(used_dates, newdate == dates[i]) #select the date we want to calculate the nr of cases per 100.000 inhabitants for
-    
-    #create data frame of the  dates, and remove duplicates (total reported per municipalities are the same across duplicates)
-    df <- step1[!duplicated(step1[,"MN_name"]),] 
-    
-    #calculate the mean number of reported cases per 100.000 inhabitants in the Netherlands and store in object
-    means <- mean(df$cases_per_100000, na.rm = TRUE)
-    totals[i] <- means #give it a name
-  }
-  
-  #create a dataframe with the totals by the respecitve dates
-  tot_frame <- as.data.frame(cbind(dates[-1], totals))
+#make a function that calculates the mean number of infection per 100.000 inhabitants per day per security region
+totalperregion <- function(used_dates) {
+
+selection <- used_dates %>% select(newdate, MN_name, SR_name, cases_per_100000) #create dataframe with only the variables we need
+unique <- selection[!duplicated(selection[, c("newdate", "MN_name")]),] #delete observations that represent the same municipality on the same date
+tot_frame <- aggregate(cases_per_100000 ~ SR_name + newdate, data = unique, FUN = "mean") #aggregate the cases per 100,000 people by security region and date, take the mean
+tot_frame <- tot_frame[order(tot_frame$SR_name),]  #reorder the resulting dataframe by security region name
+
   #give the columns informative names
-  colnames(tot_frame) <- c("Date", "Reported infections per 100.000")
-  #and make the increase numeric
-  tot_frame$`Reported infections per 100.000` <- as.numeric(tot_frame$`Reported infections per 100.000`)
+  colnames(tot_frame) <- c("Security Region", "Date", "Value")
+  #and make the total number of reported cases numeric
+  tot_frame$Value <- as.numeric(tot_frame$Value)
   
-  #create a plot of the increase per 100.000 inhabitants over time
-  barplot(tot_frame$`Reported infections per 100.000`, 
-          col = "greenyellow",
-          xlab = "Date", 
-          ylab = "Reported infections (1:100,000)", 
-          names.arg = as.Date(dates[-1]))
+#SAVE AS SEPARATE PICTURES
+for (var in unique(tot_frame$`Security Region`)) {
+plots <- ggplot(subset(tot_frame, tot_frame$`Security Region` == var), aes(as.Date(Date), Value)) +
+      geom_bar(stat = 'identity') +
+      labs(x = "Sample Date", y = "Reported number of cases per 100,000 inhabitants", title = paste0(var)) + scale_x_date(date_labels = "%B")
+ ggsave(paste0(var,'.png'), width = 20, height = 20, units = "cm")
+    }
+
+#WRAP IN ONE FRAME
+plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
+      geom_bar(stat = 'identity') +
+      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%B")
   
-  return(tot_frame)
+output <- list (tot_frame, plot)
+  return(output)
 }
 
+totalperregion(used_dates)
+
 ```
+
+
+#### RE-EVALUATE IF / HOW WE WANT TO USE THIS SECTION
+
+
+\subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
+\label{sec:sub3}
+
+We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we have visualized the distribution of the RNA particles in the Netherlands over time. In the figure below, the mean number of RNA particles per 100,000 inhabitants summed over all sewage water installations for every day is plotted. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. 
 
 ```{r 3a, results = 'hide', fig.align = "center", fig.cap = x3, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
 x3 <- paste(
     "Cumulative number of reported infections per day per 100,000 inhabitants in the Netherlands over time")
 totalCalculator2(used_dates)
 ```
-
-```{r fig.width = 10, include = FALSE}
-#in the data preparation, we already multplied the municipality population by 1000,
-#so no need to do that again.
-#however, we do need make a new variable containing the number of cases per 100.000 people
-#to do that, we multiple the total number of reported cases by 100.000 divided by the municipality population and give it an informative name.
-used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
-
-#make a function that calculates the mean number of infection per 100.000 inhabitants per day.
-#so, this is over the Netherlands as a whole.
-
-differenceCalculator2 <- function(used_dates) {
-  used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
-  dates <- unique(used_dates$newdate) #create a list of dates
-  differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.
-  for (i in 1:(length(differences))) {
-    step1 <- filter(used_dates, newdate == dates[i]) #select date of reference
-    step2 <- filter(used_dates, newdate == dates[i+1]) #select date we want to calculate the nr of new cases for
-    
-    #create data frames of both sets of dates, and remove duplicates (total reported per municipalities are the same across duplicates)
-    df1 <- step1[!duplicated(step1[,"MN_name"]),]
-    df2 <- step2[!duplicated(step2[,"MN_name"]),]
-    
-    #calculate the differences by subtracting the previous day from the one the for loop is on then
-    diff <- (mean(df2$cases_per_100000, na.rm = TRUE) - mean(df1$cases_per_100000, na.rm = TRUE))
-    #and store it in our differences vector
-    differences[i] <- diff
-  }
-  
-  #create a dataframe with the differences by the respecitve dates
-  diff_frame <- as.data.frame(cbind(dates[-1], differences))
-  #give the columns informative names
-  colnames(diff_frame) <- c("Date", "Increase in reported infections per 100.000")
-  #and make the increase numeric
-  diff_frame$`Increase in reported infections per 100.000` <- as.numeric(diff_frame$`Increase in reported infections per 100.000`)
-  
-  #create a plot of the increase per 100.000 inhabitants over time
-  barplot(diff_frame$`Increase in reported infections per 100.000`, 
-          col = "greenyellow",
-          xlab = "Date", 
-          ylab = "New reported infections (1:100,000)", 
-          names.arg = as.Date(dates[-1]))
-  
-  return(diff_frame)
-}
-
-```
-
-```{r 3b, results = 'hide', fig.align = "center", fig.cap = x4, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x4 <- paste(
-    "Number of new reported infections per day per 100,000 inhabitants in the Netherlands over time")
-differenceCalculator2(used_dates)
-```
-
-As we mentioned in the literature review, infected people have RNA particles in their stool that end up in the sewage. If more people are infected we would expect that there are more RNA particles in the sewage. Then, the total amount of RNA particles in the sewage per day should follow the same course as the total number of infections per day over time.  To find out if this holds for the epidemic in the Netherlands we plotted the total amount of RNA particles found per day. The figure is shown below. The shape of the plot is different from the shape of the plot of the total number of infections per day. So the total amount of RNA particles in the sewage per day does not follow the same course as the total number of infections per day over time.
 
 ```{r fig.width=10, echo = FALSE}
 
