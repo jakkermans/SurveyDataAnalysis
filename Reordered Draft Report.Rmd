@@ -176,7 +176,7 @@ After the samples are taken, they are transported at a controlled temperature to
 
 Multiple equations result in an estimate of the number of RNA particles per 100,000 inhabitants of the Netherlands, which was made possible by mapping the number of households connected to a STP. In these equations, the RIVM corrects for the amount of water that flows into the STPs [@Rijksoverheid]. This is needed, because when it has rained, this results in more water in the sewage. More water would lower the concentration of RNA particles in the wastewater, hereby possibly distorting the estimate. The resulting numbers are presented on the Corona Dashboard [@Dashboard]. 
 
-The remainder of this report is structured as follows. Prior research in the field of measuring RNA is discussed in Section \ref{sec:litrev}. Section \ref{sec:datmet} describes the data and the analyses conducted in this research. The results of those analyses are described in Section \ref{sec:results}. Section \ref{sec:conclusion} interprets those results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
+The remainder of this report is structured as follows. Prior research in the field of measuring RNA is discussed in Section \ref{sec:litrev}. Section \ref{sec:data} describes the data and the analyses conducted in this research. The results of those analyses are described in Section \ref{sec:metresults}. Section \ref{sec:conclusion} interprets those results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
 
 \section{Literature Review}
 \label{sec:litrev}
@@ -203,8 +203,8 @@ Another problem with the current data on RNA in sewage water, is that it is unkn
 
 Finally, when taking a sample of the sewage water, the concentration of RNA that it contains may be less than the original concentration in the sewage water. This may be due to the type of the environment or the physical and chemical properties of the environment [@lahrich2020review]. For example, some RNA particles may die due to the temperature of the wastewater or because of too much sunlight exposure. Since the RNA concentration can be lowered, we need to be careful when using it as a predictor to estimate the number of COVID infections.
 
-\section{Data and Methodology}
-\label{sec:datmet}
+\section{Data}
+\label{sec:data}
 \subsection{Structure of the data}
 We are working with two datasets, both collected by the Dutch National Institute for Public Health and the Environment (RIVM). The first dataset contains the total number of positive tests reported per day per municipality. It also contains information on key characteristics of the municipality, such as population density and which security region it is part of. The second dataset contains data recorded on the level of STPs. The key variable here is the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage water per 100,000 inhabitants. This dataset also contains crucial metadata of the STPs, such as in which security region the area of responsibility of this STP falls. The two datasets were matched to each other by the variable in which security region a municipality and a treatment plant’s area fall respectively.
 
@@ -226,9 +226,9 @@ First of all, the data on the number of positive tests are recorded on the level
 However, some STPs also treat water from outside their primary security region, creating double entries in the dataset and making simple matching impossible. Luckily, the dataset also provides information on what percentage of the water a STP processes comes from which security region, so we can weight the RNA flow by this variable. See SR2 of Figure \ref{fig:diagram}.
 Furthermore, some very large municipalities produce so much sewage water in one day, that multiple treatment plants are required to process it, causing a second kind of double entries. See SR3 of Figure \ref{fig:diagram}. Unfortunately, there are no data available that specify how much of the water from these large municipalities goes to which treatment plant, making it impossible to establish if there is a relationship between the RNA flow and the number of positive cases on the municipality level.
 
-We take the above relationships into account in our analyses. Furthermore, we conclude that we have to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of positive cases, to get an accurate indicator. Lastly, the data we use in our analyses are a subset of the original dataset, because the dataset only includes all STPs from the 7th of September onwards. 
+We take the above relationships into account in our analyses. Furthermore, we conclude that we have to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of positive cases, to get an accurate indicator. Moreover, the data we use in our analyses are a subset of the original dataset, because the dataset only includes all STPs from the 7th of September onwards. 
 
-The problem with a longitudinal study such as this one is that missing values can occur at any given point during the study. This could subsequently affect the final results in a negative way. Because of the missing data, not every security region has data on RNA flow for one day and data on reported cases seven days later. As this would be the ideal situation, the missing RNA flow data will be imputed. More specifically, Last Observation Carried Forward (LOCF) imputes the missing data due to the scope of the project. LOCF is a simple imputation method that imputes missing data for an individual by assigning the last observed value for that individual to each missing value [@cook2004marginal]. Although this does solve the problem of missing data, it is not the best imputation method and it does have some limitations.
+Another problem with a longitudinal study such as this one is that missing values can occur at any given point during the study. This could subsequently affect the final results in a negative way. Because of the missing data, not every security region has data on RNA flow for one day and data on reported cases seven days later. As this would be the ideal situation, the missing RNA flow data will be imputed. More specifically, Last Observation Carried Forward (LOCF) imputes the missing data due to the scope of the project. LOCF is a simple imputation method that imputes missing data for an individual by assigning the last observed value for that individual to each missing value [@cook2004marginal]. Although this does solve the problem of missing data, it is not the best imputation method and it does have some limitations.
 
 First of all, it is a conservative imputation method according to @streiner2008missing. This means that it underestimates what the missing RNA flow values would have been as this technique assumes that an individual does not change at the times of missing values. Therefore, LOCF introduces some bias in the estimates due to this underestimation. Nevertheless, it would still provide better estimates than using only the observed cases for the analyses. Second, LOCF has an ad hoc nature which means that it has no measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. This implies that no additional covariates can be included to reduce bias introduced by this imputation method. 
 
@@ -243,13 +243,17 @@ We work towards our goal through asking and answering several sub-questions. The
    \item How does this relationship look over time? (Section \ref{sec:sub5})
 \end{APAenumerate}
 
+\section{Methodology and Results}
+\label{sec:metresults}
+
+In this section, the different subquestions are treated consecutively. First, the methodology that was used to answer the specfic question is described. Second, the results are displayed and discussed immediately afterwards. 
+
 \subsection{How does the total number of reported infections in the Netherlands as a whole develop over time?}
 \label{sec:sub1}
 
-In order to answer this question we need a function that calculates the number of total reported infections per day. We wrote a function to aggregate the data by the number of reported infections in a municipality on a given day to the total number of reported infections on that day in the Netherlands as a whole, discarding double entries per municipality. The resulting output is visualized in Figure \ref{fig:2a}, where you can see the total number of reported infections we have had over time in the Netherlands. The second wave is also clearly visible, where you see the total number of reported infections increasing more rapidly in October compared to September. 
+In order to answer the first question, we needed a function that calculated the number of total reported infections per day. A function was written that aggregated the data by the number of reported infections in a municipality on a given day to the total number of reported infections on that day in the Netherlands as a whole, discarding double entries per municipality. The resulting output is visualized in Figure \ref{fig:2a}, where you can see the total number of reported infections we have had over time in the Netherlands. The second wave is also clearly visible, where it can be seen that the total number of reported infections increasing more rapidly in October compared to September. 
 
-We are also interested in the daily fluctuations of the number of reported infections in the Netherlands. To show this, we altered the function such that it would calculate the difference in total reported cases between each day and the day before. The results are visualized in Figure \ref{fig:2b}. We see that the peak of new infections in the second wave is somewhere in the end of October, as we would expect from the previous figure.  
-
+We were also interested in the daily fluctuations of the number of reported infections in the Netherlands. To show this, we altered the function such that it would calculate the difference in total reported cases between each day and the day before. The results are visualized in Figure \ref{fig:2b}. We see that the peak of new infections in the second wave is somewhere at the end of October, as we would expect from the previous figure.  
 
 ```{r fig.width = 10, include = FALSE}
 #create dataframe with only the observations from 7th of September onward
@@ -393,7 +397,7 @@ totalCalculator2 <- function(used_dates) {
   barplot(tot_frame$`Reported infections per 100.000`, 
           col = "greenyellow",
           xlab = "Date", 
-          ylab = "Reported infections per 100,000 inhabitants", 
+          ylab = "Reported infections (1:100,000)", 
           names.arg = as.Date(dates[-1]))
   
   return(tot_frame)
@@ -446,7 +450,7 @@ differenceCalculator2 <- function(used_dates) {
   barplot(diff_frame$`Increase in reported infections per 100.000`, 
           col = "greenyellow",
           xlab = "Date", 
-          ylab = "New reported infections per 100,000 inhabitants", 
+          ylab = "New reported infections (1:100,000)", 
           names.arg = as.Date(dates[-1]))
   
   return(diff_frame)
@@ -680,9 +684,6 @@ x9 <- paste(
 plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation")
 abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
 ```
-
-\section{Results}
-\label{sec:results}
 
 \section{Conclusion}
 \label{sec:conclusion}
