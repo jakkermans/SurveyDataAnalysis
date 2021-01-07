@@ -543,7 +543,7 @@ x6 <- paste(
     "Number of installations per day")
 totalCalculator_installations(used_dates)
 ```
-Then, maybe the mean number of RNA particles in the sewage per day does follow the same tendency as the number of infections over time. Below the plot of the mean number of RNA particles over time is shown. This plot also does not have the same shape as the plot of the number of infections per day. So the number of installations from which a sample was taken does not explain why the total amount of RNA particles does not have the same course as the number of infections over time. So something else is going on. 
+Then, if in all installations the same amount of RNA particles is found each day, the mean number of RNA particles in the sewage per day should follow the same tendency as the number of infections over time. Below the plot of the mean number of RNA particles over time is shown. This plot does not have the same shape as the plot of the number of infections per day. This suggests that in different installations different amounts of RNA particles are found.
 
 ```{r}
 virusCalculator_new_means <- function(used_dates) {
