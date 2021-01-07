@@ -168,15 +168,25 @@ str(dat)
 
 In December 2019, a virus known as SARS-Cov-2 (COVID-19) was initiated in Wuhan, China. This variant of the SARS coronavirus, which shocked the world in 2003, caused a worldwide pandemic with many consequences. However, this virus is more dangerous since 20% to 40% of the patients show no symptoms, contributing to the silent spread of the virus [@vallejo2020highly].
 
-Although patients do not always show symptoms of the virus, they do leave RNA particles of the virus in their feces as shown by for example @pan2020viral. The virus can sustain itself for a long period of time within the feces, in some cases even one or more months after the respective patient has tested negative for RNA particles in their feces [@vallejo2020highly]. Therefore, the amount of RNA particles could be an indicator of the true number of COVID-19 patients within a country or security region. Given this information, this project attempted to build a model that estimates the true number of new positive cases in a security region on a given day based on the RNA flow seven days prior.
+Although patients do not always show symptoms of the virus, they do leave RNA particles of the virus in their feces as shown by for example @pan2020viral. The virus can sustain itself for a long period of time within the feces, in some cases even one or more months after the respective patient has tested negative for RNA particles in their feces [@vallejo2020highly]. Therefore, the amount of RNA particles could be an indicator of the true number of COVID-19 patients within a country or security region. 
 
 Ever since the start of the pandemic in the Netherlands, the National Institute for Public Health and the Environment (RIVM) has been collecting samples from sewage treatment plants (STPs) and testing them for RNA presence. The research started small, with only 29 out of the 355 STPs in April 2020, but since the beginning of September of the same year, all STPs in the Netherlands are sampled once or multiple times a week. 
 
 After the samples are taken, they are transported at a controlled temperature to the RIVM, where they are analysed by researchers for RNA particles. RNA is isolated and Polymerase Chain Reaction (PCR) is performed on the samples to determine the amount of RNA particles present in the wastewater [@Riool].
 
 Multiple equations result in an estimate of the number of RNA particles per 100,000 inhabitants of the Netherlands, which was made possible by mapping the number of households connected to a STP. In these equations, the RIVM corrects for the amount of water that flows into the STPs [@Rijksoverheid]. This is needed, because when it has rained, this results in more water in the sewage. More water would lower the concentration of RNA particles in the wastewater, hereby possibly distorting the estimate. The resulting numbers are presented on the Corona Dashboard [@Dashboard]. 
+As RNA can be used as an indicator for estimating the true number of covid cases, this project attempts to build a model that estimates the true number of new positive cases in a security region on a given day based on the RNA flow seven days prior. We work towards this goal through asking and answering the following sub-questions:
+\begin{APAenumerate}
+  \setlength{\itemsep}{0pt}
+  \setlength{\parskip}{0pt}
+   \item How does the total number of reported infections in the Netherlands as a whole develop over time? 
+   \item What does this trend look like displayed per 100,000 inhabitants of the Netherlands? 
+   \item What is the mean level of RNA particles found in the water per 100,000 inhabitants? 
+   \item What is the relationship between RNA particles and the total number of infections on one given moment? 
+   \item How does this relationship look over time?
+\end{APAenumerate}
 
-The remainder of this report is structured as follows. Prior research in the field of measuring RNA is discussed in Section \ref{sec:litrev}. Section \ref{sec:data} describes the data and the analyses conducted in this research. The results of those analyses are described in Section \ref{sec:metresults}. Section \ref{sec:conclusion} interprets those results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
+The remainder of this report is structured as follows. Prior research in the field of measuring RNA is discussed in Section \ref{sec:litrev}. Section \ref{sec:data} describes the data and the challenges they provided. The methodology used to answer the subquestions, as well as the results are discussed in Section \ref{sec:metresults}. Section \ref{sec:conclusion} interprets and aggregates the results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
 
 \section{Literature Review}
 \label{sec:litrev}
@@ -232,21 +242,10 @@ Another problem with a longitudinal study such as this one is that missing value
 
 First of all, it is a conservative imputation method according to @streiner2008missing. This means that it underestimates what the missing RNA flow values would have been as this technique assumes that an individual does not change at the times of missing values. Therefore, LOCF introduces some bias in the estimates due to this underestimation. Nevertheless, it would still provide better estimates than using only the observed cases for the analyses. Second, LOCF has an ad hoc nature which means that it has no measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. This implies that no additional covariates can be included to reduce bias introduced by this imputation method. 
 
-We work towards our goal through asking and answering several sub-questions. The following section contains the analysis for answering the following questions:
-\begin{APAenumerate}
-  \setlength{\itemsep}{0pt}
-  \setlength{\parskip}{0pt}
-   \item How does the total number of reported infections in the Netherlands as a whole develop over time? (Section \ref{sec:sub1})
-   \item What does this trend look like displayed per 100,000 inhabitants of the Netherlands? (Section \ref{sec:sub2})
-   \item What is the mean level of RNA particles found in the water per 100,000 inhabitants? (Section \ref{sec:sub3})
-   \item What is the relationship between RNA particles and the total number of infections on one given moment? (Section \ref{sec:sub4})
-   \item How does this relationship look over time? (Section \ref{sec:sub5})
-\end{APAenumerate}
-
 \section{Methodology and Results}
 \label{sec:metresults}
 
-In this section, the different subquestions are treated consecutively. First, the methodology that was used to answer the specfic question is described. Second, the results are displayed and discussed immediately afterwards. 
+In this section, the different subquestions are dealt with consecutively. First, the methodology that was used to answer the specfic question is described. Second, the results are displayed and discussed immediately afterwards. 
 
 \subsection{How does the total number of reported infections in the Netherlands as a whole develop over time?}
 \label{sec:sub1}
