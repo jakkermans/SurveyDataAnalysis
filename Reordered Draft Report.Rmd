@@ -80,9 +80,14 @@ header-includes:
 library("papaja")
 library(dplyr)
 library(tidyverse)
+library(DescTools)
+library(tibble) # better printing  # obviously
+library(mapproj)
+library(ggplot2)
+library(hash)
 r_refs("r-references.bib")
 knitr::opts_chunk$set(echo = FALSE, comment = "", cache = TRUE, fig.align = "center")
-setwd("C:/Users/sande/OneDrive/Documenten/M&S")
+#setwd("C:/Users/sande/OneDrive/Documenten/M&S")
 dat <- readRDS("covid cases waste + tests.RDS")
 ```
 
@@ -258,6 +263,8 @@ We were also interested in the daily fluctuations of the number of reported infe
 #create dataframe with only the observations from 7th of September onward
 all_dates  <- unique(dat$newdate) #243 recorded dates, starting March 13th
 used_dates <- dat %>% filter(newdate %in% all_dates[-c(1:178)]) #dates from 7th of September
+used_dates$TP_RNA.flow.per.100000.locf <- LOCF(used_dates$TP_RNA.flow.per.100000)
+used_dates$TP_percentage.in.SR.locf <- LOCF(used_dates$TP_percentage.in.SR)
 
 #this function calculates the total of reported cases on one day, across all municipalities
 totalCalculator <- function(used_dates) {
@@ -497,7 +504,7 @@ virusCalculator_new_totals <- function(used_dates) {
 
 ```
 
-```{r 4, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r 4a, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
 x5 <- paste(
     "Total RNA flow per 100,000 inhabitants in the Netherlands per day")
 virusCalculator_new_totals(used_dates)
@@ -570,7 +577,7 @@ virusCalculator_new_means <- function(used_dates) {
 ```{r 4, results = 'hide', fig.align = "center", fig.cap = x7, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
 x7 <- paste(
     "Mean RNA flow per 100,000 inhabitants in the Netherlands per day")
-virusCalculator_new(used_dates)
+#virusCalculator_new(used_dates)
 ```
 
 \subsection{What is the relationship between RNA particles and the total number of infections on one given moment?}
@@ -720,6 +727,88 @@ x10 <- paste(
     "Correlations between RNA flow and increase in infections over time")
 plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation")
 abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
+```
+
+```{r 9, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
+x11 <- paste(
+  "Municipalities and Security Regions in the Netherlands"
+)
+mun_dat <- read.csv2("municipalities_v7.csv", header = T, sep = ",") #load in municipality dataset
+mun_dat2 <- mun_dat[,c(3,4,6,7)] #select the columns municipality, province, latitude and longitude
+colnames(mun_dat2) <- c("municipality", "province", "latitude", "longitude") #assign correct columnnames
+mun_dat2 <- mun_dat2[-c(228,229),] #remove rows with incorrect coordinates
+mun_dat2$municipality <- gsub("'", "", mun_dat2$municipality)
+mun_dat3 <- as.data.frame(subset(mun_dat2, mun_dat2$municipality %in% used_dates$MN_name))
+
+mun_dict <- hash()
+for (i in 1:nrow(used_dates)) {
+  if (used_dates[i,5] %in% keys(mun_dict)) {
+    next
+  } else {
+    mun_dict[[used_dates[i,5]]] <- used_dates[i,3]
+  }
+}
+
+mun_dat3$SR_name <- rep("X", nrow(mun_dat3))
+for (i in 1:nrow(mun_dat3)) {
+  mun_dat3[i,5] <- mun_dict[[mun_dat3[i,1]]]
+}
+
+muns <- unique(mun_dat3$municipality)
+mun_dat3$Total_cases <- rep(0, nrow(mun_dat3))
+for (i in 1:length(muns)) {
+  muni_data <- used_dates[used_dates$MN_name == muns[i],]
+  no_rep_muni_data <- muni_data[!duplicated(muni_data[,"MN_name"]),]
+  mun_dat3[i,6] <- sum(no_rep_muni_data$MN_total.reported)
+}
+
+NLD <- readRDS("gadm36_NLD_2_sp.rds")
+NLD@data %>% as_tibble()
+
+
+NLD_fixed <- subset(NLD, !NLD$NAME_1  %in% c("Zeeuwse meren", "IJsselmeer"))
+NLD_fixed <- fortify(NLD_fixed)
+
+plot_dat <- used_dates %>% select(gemeente = `MN_name`, Regio = `SR_name`)
+
+names_and_numbers <- data_frame(id=rownames(NLD@data),
+                                gemeente=NLD@data$NAME_2) %>% 
+  left_join(plot_dat, by = "gemeente")
+
+final_map <- as.data.frame(left_join(NLD_fixed, names_and_numbers, by = "id"))
+ggplot(final_map) +
+  theme_minimal()+
+  geom_polygon( aes(x = long, y = lat, group = group),
+                color = "grey", alpha = 1/5) +
+  coord_map() +
+  theme(legend.position = "right")+
+  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), colour = SR_name, size = Total_cases))  +
+  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), size = Total_cases), colour = "black", pch = 21) +
+  scale_size_continuous(range = c(1,10),
+                        breaks = seq(0,7000, by = 700))
+```
+
+```{r 10, results = 'hide', fig.align = "center", fig.cap = x12, fig.height = 10, fig.width = 10, fig.pos = "H"}
+x12 <- paste(
+  "Treatment plants in the Netherlands"
+)
+used_dates$TP_lat <- 52.15517 + (( (3235.65389 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-32.58297 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (-0.2475 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.84978 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.0655 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.01709 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00738 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (0.0053 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4) + (-0.00039 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (0.00033 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00012 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) )/ 3600)
+
+used_dates$TP_long <- 5.387206 + (( (5260.52916 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (105.94684 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (2.45656 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.81885 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3) + (0.05594 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.05607 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (0.01199 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00256 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (0.00128 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 4) + (0.00022 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00022 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (0.00026 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 5) ) /3600)
+
+tp_data <- used_dates[,c("SR_name","TP_lat", "TP_long")]
+tp_data <- tp_data[complete.cases(tp_data),]
+tp_data <- tp_data[!duplicated(tp_data),]
+
+ggplot(final_map)+
+  theme_minimal()+
+  geom_polygon( aes(x = long, y = lat, group = group),
+                color = "grey", alpha = 1/5) +
+  coord_map() +
+  scale_fill_distiller(name = "Number of people in gemeente", # change titel legend
+                       palette = "Spectral")+ # change the color scheme
+  theme(legend.position = "bottom")+
+  geom_point(data = tp_data, aes(x = TP_long, y = TP_lat, colour = SR_name))
 ```
 
 \section{Conclusion}
