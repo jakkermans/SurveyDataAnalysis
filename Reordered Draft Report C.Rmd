@@ -103,7 +103,8 @@ dat <- readRDS("covid cases waste + tests.RDS")
   font={footnotesize}, 
   labelfont={it},
   justification={raggedright},
-  labelsep={period}}
+  labelsep={period},
+  skip={0pt}}
 
 ```{r analysis-preferences}
 # Seed for random number generation
@@ -561,7 +562,7 @@ x7 <- paste(
 virusCalculator_new_means(used_dates)
 ```
 
-\subsection{What is the relationship between RNA particles and the total number of infections on one given moment?}
+\subsection{How do RNA particles and the total number of infections relate to each other?}
 \label{sec:sub4}
 
 As mentioned in the data description, some installations process water from multiple security regions, rendering the current RNA flow variable unrepresentative. We do have a variable available that contains the proportion of water from the security region processed by that respective installation. We multiplied these two columns to create a representative RNA flow variable.
@@ -615,17 +616,8 @@ for (i in 1:(length(regions))) {
 
 ```
 
-```{r 7, results = 'hide', fig.align = "center", fig.cap = x9, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x9 <- paste(
-    "Relation between RNA flow and increase in infections for one timestamp")
-plot(day_frame$RNA.flow, day_frame$Reported, col = "red", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections")
-     abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
-```
-
 Figure \ref{fig:7} shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
 
-\subsection{How does this relationship look over time?}
-\label{sec:sub5}
 ```{r fig.width = 10, include = FALSE}
 corCalculator <- function(good_frame, used_dates) {
   dates <- unique(good_frame$Date)
@@ -724,8 +716,14 @@ corperregion(good_frame)
 better_frame <- good_frame[good_frame$RNA.flow < 4e+14,]
 #and try it again
 corperregion(better_frame)
+#because of the size of this figure, we saved it and included it manually
 ```
 
+\begin{figure}
+\centering
+        \includegraphics{Te Groot Plot.png}
+    \caption{Relation between RNA flow and number of covid infections}
+\end{figure}
 
 ```{r 9, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
 x11 <- paste(
@@ -821,13 +819,6 @@ If we had infinite time and resources, we would like to enrich our analysis by i
 \section{Discussion}
 \label{sec:discussion}
 
-```{r 8, results = 'hide', fig.align = "center", fig.cap = x10, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x10 <- paste(
-    "Correlations between RNA flow and increase in infections over time")
-plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "red", pch = 19, xlab = "Date", ylab = "Correlation")
-abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
-```
-
 \endgroup
 \newpage
 
@@ -842,4 +833,27 @@ abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
 <div id="refs" custom-style="Bibliography"></div>
 \endgroup
 
+\appendix
+\section{Extra Plots}
+
+\captionsetup[figure]{
+  font={footnotesize}, 
+  labelfont={it},
+  justification={raggedright},
+  labelsep={period},
+  skip={0pt}}
+
+```{r 7, results = 'hide', fig.align = "center", fig.cap = x9, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+x9 <- paste(
+    "Relation between RNA flow and increase in infections for one timestamp")
+plot(day_frame$RNA.flow, day_frame$Reported, col = "greenyellow", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections")
+     abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
+```
+
+```{r 8, results = 'hide', fig.align = "center", fig.cap = x10, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+x10 <- paste(
+    "Correlations between RNA flow and increase in infections over time")
+plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "greenyellow", pch = 19, xlab = "Date", ylab = "Correlation")
+abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
+```
 
