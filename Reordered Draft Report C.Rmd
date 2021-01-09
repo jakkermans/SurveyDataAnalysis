@@ -104,7 +104,7 @@ dat <- readRDS("covid cases waste + tests.RDS")
   labelfont={it},
   justification={raggedright},
   labelsep={period},
-  skip={0pt}}
+  skip={0.5pt}}
 
 ```{r analysis-preferences}
 # Seed for random number generation
@@ -386,29 +386,33 @@ tot_frame <- tot_frame[order(tot_frame$SR_name),]  #reorder the resulting datafr
 #SAVE AS SEPARATE PICTURES
 for (var in unique(tot_frame$`Security Region`)) {
 plots <- ggplot(subset(tot_frame, tot_frame$`Security Region` == var), aes(as.Date(Date), Value)) +
-      geom_bar(stat = 'identity') +
+      geom_bar(stat = 'identity', color = "greenyellow") +
       labs(x = "Sample Date", y = "Reported number of cases per 100,000 inhabitants", title = paste0(var)) + scale_x_date(date_labels = "%B")
  ggsave(paste0(var,'.png'), width = 20, height = 20, units = "cm")
     }
 
 #WRAP IN ONE FRAME
 plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
-      geom_bar(stat = 'identity') +
-      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%B")
+      geom_bar(stat = 'identity', color = "greenyellow") +
+      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%B") +
+  theme_minimal()
   
 output <- list (tot_frame, plot)
   return(output)
 }
 
-```
-
-```{r 11, results = 'hide', fig.align = "center", fig.cap = x13, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x13 <- paste(
-    "Number of cases per 100,000 inhabitants per security region")
 totalperregion(used_dates)
+
 ```
 
-As can be seen in \ref{fig:11}, the number of cases per 100,000 inhabitants varies per security region. For example, the number of cases in Amsterdam-Amstelland is much higher than in Zeeland. Moreover, the increase in cases had a different trend in Rotterdam-Rijnmond compared to Amsterdam-Amstelland. 
+\begin{figure}[!hbt]
+\centering
+        \includegraphics{Reported Infections SR.png}
+    \caption{Number of cases per 100,000 inhabitants per security region}
+    \label{fig:nice}
+\end{figure}
+
+As can be seen in \ref{fig:nice}, the number of cases per 100,000 inhabitants varies per security region. For example, the number of cases in Amsterdam-Amstelland is much higher than in Zeeland. Moreover, the increase in cases had a different trend in Rotterdam-Rijnmond compared to Amsterdam-Amstelland. 
 
 \subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
 \label{sec:sub3}
@@ -438,7 +442,7 @@ tot_frame <- tot_frame[order(tot_frame$SR_name),]  #reorder the resulting datafr
   
 #WRAP IN ONE FRAME
 plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
-      geom_bar(stat = 'identity') +
+      geom_bar(stat = 'identity', color = "greenyellow") +
       ylim(0, 3.5e+14) + 
       labs(x = "Date", y = "Mean RNA flow") + 
       facet_wrap(. ~ `Security Region`) + 
@@ -453,114 +457,16 @@ RNAperregion(used_dates)
 
 ```
 
-```{r fig.width=10, echo = FALSE}
-
-used_dates$TP_RNA.flow.per.100000.locf <- as.numeric(used_dates$TP_RNA.flow.per.100000.locf)
-
-virusCalculator_new_totals <- function(used_dates) {
-  #creates a vector containing the unique values of the dates column of data. So vector with dates from September the seventh
-  #till October the tenth
-  dates <- unique(used_dates$newdate)
-  #makes an empty numeric vector which length is equal to number of dates
-  totals <- numeric(length(dates))
-  for (i in 1:length(totals)) {
-    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
-    date_data <- filter(used_dates, newdate == dates[i])
-    #delete rows if the water installation name is already in other row.
-    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
-    #calculate total of the rna per 100000 column and store in totals vector
-    totals[i] <- sum(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
-  }
-  #put date and means vector in dataframe.
-  totals_frame <- as.data.frame(cbind(dates, totals))
-  #define column names.
-  colnames(totals_frame) <- c("Date", "Total RNA flow per 100000")
-  #coerce the column into double precision vector.
-  totals_frame$`Total RNA flow per 100000` <- as.double(totals_frame$`Total RNA flow per 100000`)
-  #create a barplot 
-  barplot(totals_frame$`Total RNA flow per 100000`, col='greenyellow', 
-          xlab = 'Date', ylab = 'Total RNA flow per 100,000 inhabitants', names.arg = dates)
-  return(totals_frame)
-}
-
-```
-
-```{r 4a, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x5 <- paste(
-    "Total RNA flow per 100,000 inhabitants in the Netherlands per day")
-virusCalculator_new_totals(used_dates)
-```
+\begin{figure}[!hbt]
+\centering
+        \includegraphics{RNA flow SR.png}
+    \caption{Mean RNA flow per 100,000 inhabitants per security region per day}
+    \label{fig:nice}
+\end{figure}
 
 Why does the total amount of RNA particles in the sewage per day not follow the same course as the total number of infections per day over time? One reason could be that there are days on which water samples are not taken from each installation. The plot below shows the number of installations from which a sample was taken per day. The figure below shows that the number of installations from which a sample is taken differs per day. The figure also shows that the maximum number of sewage water installations from which samples are taken lies somewhere around one hundred. Since there are more than three hundred installations from which a sample can be taken [@Riool], there is not a single day where a sample is taken from all installations.
 
-```{r fig.width = 10, echo = FALSE}
-totalCalculator_installations <- function(sewer_data) {
-  dates <- unique(sewer_data$newdate) #create a list of unique dates in the data set 
-  totals <- numeric(length(dates)) #make an object with the length of the number of dates
-  
-  #subtract number of reported cases of the day before each day to get the difference
-  for (i in 1:(length(totals))) {
-    step1 <- filter(sewer_data, newdate == dates[i]) #select date we want to calculate the nr of new cases for
-    
-    #create data frame of the  dates, and remove duplicates (of installations)
-    df <- step1[!duplicated(step1[,"TP_code"]),]
-    codes<-df$TP_code[!is.na(df$TP_code)]
-    #calculate the number of installations per day
-    sums <- length(codes)
-    totals[i] <- sums
-  }
-  barplot(totals, 
-          col = 'greenyellow', 
-          names.arg = dates, 
-          ylab = 'Number', 
-          xlab = 'Date')
-  
-}
-
-```
-
-```{r 5, results = 'hide', fig.align = "center", fig.cap = x6, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x6 <- paste(
-    "Number of installations that have provided data per day")
-totalCalculator_installations(used_dates)
-```
-
 Then, if in all installations the same amount of RNA particles is found each day, the mean number of RNA particles in the sewage per day should follow the same tendency as the number of infections over time. Below the plot of the mean number of RNA particles over time is shown. This plot does not have the same shape as the plot of the number of infections per day. This suggests that in different installations different amounts of RNA particles are found.
-
-```{r}
-virusCalculator_new_means <- function(used_dates) {
-  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
-  #till october the tenth
-  dates <- unique(used_dates$newdate)
-  #makes an empty numeric vector which length is equal to number of dates
-  means <- numeric(length(dates))
-  for (i in 1:length(means)) {
-    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
-    date_data <- filter(used_dates, newdate == dates[i])
-    #delete rows if the water installation name is already in other row.
-    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
-    #take the mean of the rna per 100000 column and store in means vector
-    means[i] <- mean(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
-  }
-  #put date and means vector in dataframe.
-  means_frame <- as.data.frame(cbind(dates, means))
-  #define column names.
-  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
-  #coerce the column into double precision vector.
-  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
-  #create a barplot 
-  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', 
-          xlab = 'Date', ylab = 'Mean RNA flow per 100,000 inhabitants', names.arg = dates)
-  return(means_frame)
-}
-```
-
-
-```{r 4, results = 'hide', fig.align = "center", fig.cap = x7, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x7 <- paste(
-    "Mean RNA flow per 100,000 inhabitants in the Netherlands per day")
-virusCalculator_new_means(used_dates)
-```
 
 \subsection{How do RNA particles and the total number of infections relate to each other?}
 \label{sec:sub4}
@@ -569,92 +475,7 @@ As mentioned in the data description, some installations process water from mult
 
 Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of infections on the level of the security regions. To achieve this, we altered the current functions for calculating the RNA flow and increase in number of infections per day so that these values are reported for each security region per day. Subsequently, we compared the RNA flow from one day to the increase in the number of reported infections from seven days later. The reason for this is that there is generally a seven-day time lag between a person contracting COVID – leaving RNA particles in the sewage water – and getting a positive test [@peccia2020measurement]. A scatterplot with the aforementioned data should provide a first impression of how they are related to each other. Since not every security region has data about the RNA flow on any given day and data about the increase in the number of infections seven days later, only security regions that have data for both days are selected. Subsequently, the correlation for those data is calculated.
 
-```{r fig.width = 10, include = FALSE}
-newCalculator <- function(used_dates) {
-  sr_frame <- data.frame()
-  dates <- unique(used_dates$newdate) #extract a vector of dates
-  regions <- unique(used_dates$SR_name) #extract a vector of all security regions
-  used_dates$adjusted_RNA_flow <- (used_dates$TP_RNA.flow.per.100000.locf *  used_dates$TP_percentage.in.SR.locf)
-  
-  for (i in 1:(length(dates)-1)) {
-    step1 <- filter(used_dates, newdate == dates[i]) #filter the data for date 1
-    step2 <- filter(used_dates, newdate == dates[i+1]) #filter the data for the day after the current day
-  
-    for (j in 1:length(regions)) {
-      r1_data <- filter(step1, SR_name == regions[j]) #filter all data for a given region on the first day
-      r2_data <- filter(step2, SR_name == regions[j]) #filter all data for a given region on the second day
-    
-      df1 <- r1_data[!duplicated(r1_data[,"MN_name"]),] #delete all duplicate municipality rows
-      df2 <- r2_data[!duplicated(r2_data[,"MN_name"]),] #delete all duplicate municipality rows on the second day
-    
-      increase <- sum(df2$MN_total.reported, na.rm = TRUE) - sum(df1$MN_total.reported, na.rm = TRUE)
-      rna_flow <- sum(r2_data$adjusted_RNA_flow)
-      r_frame <- data.frame(Date = dates[i+1], Region = regions[j], Increase = increase, RNA.flow = rna_flow)
-      sr_frame <- rbind(sr_frame, r_frame)
-    }
-  }
-  non_na_frame <- sr_frame[complete.cases(sr_frame),]
-  return(non_na_frame)
-}
-
-good_frame <- newCalculator(used_dates)
-good_frame
-
-good_dates <- unique(good_frame$Date) #extract a list of the dates in the dataframe
-day1 <- filter(good_frame, Date == good_dates[1]) #extract the data of the first day, i.e. 8th of september
-day2 <- filter(good_frame, Date == good_dates[8]) #extract the data of increase in infections 7 days later, i.e. 15th of september
-regions <- unique(used_dates$SR_name)
-day_frame <- data.frame()
-for (i in 1:(length(regions))) {
-  dat1 <- filter(day1, Region == regions[i])
-  dat2 <- filter(day2, Region == regions[i])
-  if (nrow(dat1) == 1 && nrow(dat2) == 1) {
-    d_frame <- data.frame(Region = regions[i], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
-    day_frame <- rbind(day_frame, d_frame)
-  }
-}
-
-```
-
 Figure \ref{fig:7} shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
-
-```{r fig.width = 10, include = FALSE}
-corCalculator <- function(good_frame, used_dates) {
-  dates <- unique(good_frame$Date)
-  regions <- unique(used_dates$SR_name)
-  cor_frame <- data.frame()
-  
-  for (i in 1:(length(dates)-7)) {
-    day1 <- filter(good_frame, Date == dates[i]) #filter data for the first day
-    day2 <- filter(good_frame, Date == dates[i+7]) #filter data for 7 days later
-    day_frame <- data.frame()
-    observations <- 0
-  
-    for (j in 1:length(regions)) {
-      dat1 <- filter(day1, Region == regions[j])
-      dat2 <- filter(day2, Region == regions[j])
-      if (nrow(dat1) == 1 && nrow(dat2) == 1) {
-        observations <- observations + 1
-        d_frame <- data.frame(Region = regions[j], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
-        day_frame <- rbind(day_frame, d_frame)
-      } else {
-        next
-      }
-    }
-    cor_f <- data.frame(Date = dates[i+7], Correlation = cor(day_frame$Reported, day_frame$RNA.flow), Observations = observations)
-    cor_frame <- rbind(cor_frame, cor_f)
-  }
-  return(cor_frame)
-}
-
-correlation_frame <- corCalculator(good_frame, used_dates)
-correlation_frame
-mean(correlation_frame$Correlation, na.rm = TRUE)
-
-corr_frame <- correlation_frame[complete.cases(correlation_frame),]
-corr_frame$Date <- as.Date(corr_frame$Date)
-
-```
 
 Figure \ref{fig:8} shows that the correlations fluctuate over time, which seems very interesting. If the data points would have formed a straight horizontal line, the estimation of the true number of infections in the Netherlands would have been more straightforward, since it would mean that the relationship between the RNA flow and the increase in infections would have been the same for every day. The mean correlation between the datapoints in this scatterplot is 0.33, which is a moderate positive correlation. This means that as the pandemic progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. We have two hypotheses as to why this would be the case: it could be a result of increased consistency and precision in the measurements as we get more rigorous in reporting these data, or – as the number of cases has only increased over the period we analysed – it could mean that RNA flow becomes a better predictor of the total number of reported cases, as both measures have higher values.
 
@@ -719,13 +540,14 @@ corperregion(better_frame)
 #because of the size of this figure, we saved it and included it manually
 ```
 
-\begin{figure}
+\begin{figure}[!hbt]
 \centering
         \includegraphics{Te Groot Plot.png}
     \caption{Relation between RNA flow and number of covid infections}
+    \label{fig:fancyplot}
 \end{figure}
 
-```{r 9, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
+```{r 9, message=FALSE, warning=FALSE, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
 x11 <- paste(
   "Municipalities and Security Regions in the Netherlands"
 )
@@ -843,12 +665,203 @@ If we had infinite time and resources, we would like to enrich our analysis by i
   labelsep={period},
   skip={0pt}}
 
+```{r fig.width=10, include = FALSE}
+used_dates$TP_RNA.flow.per.100000.locf <- as.numeric(used_dates$TP_RNA.flow.per.100000.locf)
+
+virusCalculator_new_totals <- function(used_dates) {
+  #creates a vector containing the unique values of the dates column of data. So vector with dates from September the seventh
+  #till October the tenth
+  dates <- unique(used_dates$newdate)
+  #makes an empty numeric vector which length is equal to number of dates
+  totals <- numeric(length(dates))
+  for (i in 1:length(totals)) {
+    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
+    date_data <- filter(used_dates, newdate == dates[i])
+    #delete rows if the water installation name is already in other row.
+    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
+    #calculate total of the rna per 100000 column and store in totals vector
+    totals[i] <- sum(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
+  }
+  #put date and means vector in dataframe.
+  totals_frame <- as.data.frame(cbind(dates, totals))
+  #define column names.
+  colnames(totals_frame) <- c("Date", "Total RNA flow per 100000")
+  #coerce the column into double precision vector.
+  totals_frame$`Total RNA flow per 100000` <- as.double(totals_frame$`Total RNA flow per 100000`)
+  #create a barplot 
+  barplot(totals_frame$`Total RNA flow per 100000`, col='greenyellow', 
+          xlab = 'Date', ylab = 'Total RNA flow per 100,000 inhabitants', names.arg = dates)
+  return(totals_frame)
+}
+
+```
+
+```{r 4a, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+x5 <- paste(
+    "Total RNA flow per 100,000 inhabitants in the Netherlands per day")
+virusCalculator_new_totals(used_dates)
+```
+
+```{r fig.width = 10, echo = FALSE}
+totalCalculator_installations <- function(sewer_data) {
+  dates <- unique(sewer_data$newdate) #create a list of unique dates in the data set 
+  totals <- numeric(length(dates)) #make an object with the length of the number of dates
+  
+  #subtract number of reported cases of the day before each day to get the difference
+  for (i in 1:(length(totals))) {
+    step1 <- filter(sewer_data, newdate == dates[i]) #select date we want to calculate the nr of new cases for
+    
+    #create data frame of the  dates, and remove duplicates (of installations)
+    df <- step1[!duplicated(step1[,"TP_code"]),]
+    codes<-df$TP_code[!is.na(df$TP_code)]
+    #calculate the number of installations per day
+    sums <- length(codes)
+    totals[i] <- sums
+  }
+  barplot(totals, 
+          col = 'greenyellow', 
+          names.arg = dates, 
+          ylab = 'Number', 
+          xlab = 'Date')
+  
+}
+
+```
+
+```{r 5, results = 'hide', fig.align = "center", fig.cap = x6, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+x6 <- paste(
+    "Number of installations that have provided data per day")
+totalCalculator_installations(used_dates)
+```
+
+```{r}
+virusCalculator_new_means <- function(used_dates) {
+  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
+  #till october the tenth
+  dates <- unique(used_dates$newdate)
+  #makes an empty numeric vector which length is equal to number of dates
+  means <- numeric(length(dates))
+  for (i in 1:length(means)) {
+    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
+    date_data <- filter(used_dates, newdate == dates[i])
+    #delete rows if the water installation name is already in other row.
+    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
+    #take the mean of the rna per 100000 column and store in means vector
+    means[i] <- mean(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
+  }
+  #put date and means vector in dataframe.
+  means_frame <- as.data.frame(cbind(dates, means))
+  #define column names.
+  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  #coerce the column into double precision vector.
+  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
+  #create a barplot 
+  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', 
+          xlab = 'Date', ylab = 'Mean RNA flow per 100,000 inhabitants', names.arg = dates)
+  return(means_frame)
+}
+```
+
+```{r 4, results = 'hide', fig.align = "center", fig.cap = x7, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+x7 <- paste(
+    "Mean RNA flow per 100,000 inhabitants in the Netherlands per day")
+virusCalculator_new_means(used_dates)
+```
+
+
+```{r fig.width = 10, include = FALSE}
+newCalculator <- function(used_dates) {
+  sr_frame <- data.frame()
+  dates <- unique(used_dates$newdate) #extract a vector of dates
+  regions <- unique(used_dates$SR_name) #extract a vector of all security regions
+  used_dates$adjusted_RNA_flow <- (used_dates$TP_RNA.flow.per.100000.locf *  used_dates$TP_percentage.in.SR.locf)
+  
+  for (i in 1:(length(dates)-1)) {
+    step1 <- filter(used_dates, newdate == dates[i]) #filter the data for date 1
+    step2 <- filter(used_dates, newdate == dates[i+1]) #filter the data for the day after the current day
+  
+    for (j in 1:length(regions)) {
+      r1_data <- filter(step1, SR_name == regions[j]) #filter all data for a given region on the first day
+      r2_data <- filter(step2, SR_name == regions[j]) #filter all data for a given region on the second day
+    
+      df1 <- r1_data[!duplicated(r1_data[,"MN_name"]),] #delete all duplicate municipality rows
+      df2 <- r2_data[!duplicated(r2_data[,"MN_name"]),] #delete all duplicate municipality rows on the second day
+    
+      increase <- sum(df2$MN_total.reported, na.rm = TRUE) - sum(df1$MN_total.reported, na.rm = TRUE)
+      rna_flow <- sum(r2_data$adjusted_RNA_flow)
+      r_frame <- data.frame(Date = dates[i+1], Region = regions[j], Increase = increase, RNA.flow = rna_flow)
+      sr_frame <- rbind(sr_frame, r_frame)
+    }
+  }
+  non_na_frame <- sr_frame[complete.cases(sr_frame),]
+  return(non_na_frame)
+}
+
+good_frame <- newCalculator(used_dates)
+good_frame
+
+good_dates <- unique(good_frame$Date) #extract a list of the dates in the dataframe
+day1 <- filter(good_frame, Date == good_dates[1]) #extract the data of the first day, i.e. 8th of september
+day2 <- filter(good_frame, Date == good_dates[8]) #extract the data of increase in infections 7 days later, i.e. 15th of september
+regions <- unique(used_dates$SR_name)
+day_frame <- data.frame()
+for (i in 1:(length(regions))) {
+  dat1 <- filter(day1, Region == regions[i])
+  dat2 <- filter(day2, Region == regions[i])
+  if (nrow(dat1) == 1 && nrow(dat2) == 1) {
+    d_frame <- data.frame(Region = regions[i], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
+    day_frame <- rbind(day_frame, d_frame)
+  }
+}
+
+```
+
 ```{r 7, results = 'hide', fig.align = "center", fig.cap = x9, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
 x9 <- paste(
     "Relation between RNA flow and increase in infections for one timestamp")
 plot(day_frame$RNA.flow, day_frame$Reported, col = "greenyellow", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections")
      abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
 ```
+
+
+```{r fig.width = 10, include = FALSE}
+corCalculator <- function(good_frame, used_dates) {
+  dates <- unique(good_frame$Date)
+  regions <- unique(used_dates$SR_name)
+  cor_frame <- data.frame()
+  
+  for (i in 1:(length(dates)-7)) {
+    day1 <- filter(good_frame, Date == dates[i]) #filter data for the first day
+    day2 <- filter(good_frame, Date == dates[i+7]) #filter data for 7 days later
+    day_frame <- data.frame()
+    observations <- 0
+  
+    for (j in 1:length(regions)) {
+      dat1 <- filter(day1, Region == regions[j])
+      dat2 <- filter(day2, Region == regions[j])
+      if (nrow(dat1) == 1 && nrow(dat2) == 1) {
+        observations <- observations + 1
+        d_frame <- data.frame(Region = regions[j], Reported = dat2$Increase, RNA.flow = dat1$RNA.flow)
+        day_frame <- rbind(day_frame, d_frame)
+      } else {
+        next
+      }
+    }
+    cor_f <- data.frame(Date = dates[i+7], Correlation = cor(day_frame$Reported, day_frame$RNA.flow), Observations = observations)
+    cor_frame <- rbind(cor_frame, cor_f)
+  }
+  return(cor_frame)
+}
+
+correlation_frame <- corCalculator(good_frame, used_dates)
+correlation_frame
+mean(correlation_frame$Correlation, na.rm = TRUE)
+
+corr_frame <- correlation_frame[complete.cases(correlation_frame),]
+corr_frame$Date <- as.Date(corr_frame$Date)
+
+```
+
 
 ```{r 8, results = 'hide', fig.align = "center", fig.cap = x10, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
 x10 <- paste(
