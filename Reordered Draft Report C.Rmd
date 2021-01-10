@@ -417,7 +417,9 @@ As can be seen in \ref{fig:nice}, the number of cases per 100,000 inhabitants va
 \subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
 \label{sec:sub3}
 
-We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we have visualized the distribution of the RNA particles in the Netherlands over time. In the figure below, the mean number of RNA particles per 100,000 inhabitants summed over all sewage water installations for every day is plotted. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. 
+We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we visualized the distribution of the RNA particles in the Netherlands over time. This figure can be seen in the appendix. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. The numbers of the amount of RNA particles in the sewage per day fluctuate more than the number of new infections. 
+The aforementioned plot shows the total number of RNA particles per day. The number of installations included differs each day, which can be seen in the appendix. This may be an explanation for the fluctuation in the amount of RNA particles measured each day. To correct for this we also plotted the mean level of RNA particles in the sewage per day. The plot, which can be seen in the appendix, is smoother than the plot that shows the totals. However, there is still some fluctuation. If in all installations the same amount of RNA particles were found, you would not expect fluctuations. In that case the mean level is not affected by a missing installation. This suggests that in different installations a different amount of RNA particles can be found. Since different installations care for different regions, different regions may have different trends. In order to explore this we plotted the total amount of RNA particles found in the sewage for per day for each region. 
+As can be seen in the figure, the trend of the amount of RNA particles found differs per security region. For example, the amount of RNA particles found in Friesland is lower than in Midden- en West-Brabant. Also, in Friesland there is not really a peak, whereas there is clear peak in Midden- en West-Brabant. The trends per region look similar to the overall trend. They loosely follow the trend of infections, but there are still fluctuations. 
 
 ```{r fig.width = 10, include = FALSE}
 #in the data preparation, we already multiplied the municipality population by 1000,
@@ -464,9 +466,6 @@ RNAperregion(used_dates)
     \label{fig:nice}
 \end{figure}
 
-Why does the total amount of RNA particles in the sewage per day not follow the same course as the total number of infections per day over time? One reason could be that there are days on which water samples are not taken from each installation. The plot below shows the number of installations from which a sample was taken per day. The figure below shows that the number of installations from which a sample is taken differs per day. The figure also shows that the maximum number of sewage water installations from which samples are taken lies somewhere around one hundred. Since there are more than three hundred installations from which a sample can be taken [@Riool], there is not a single day where a sample is taken from all installations.
-
-Then, if in all installations the same amount of RNA particles is found each day, the mean number of RNA particles in the sewage per day should follow the same tendency as the number of infections over time. Below the plot of the mean number of RNA particles over time is shown. This plot does not have the same shape as the plot of the number of infections per day. This suggests that in different installations different amounts of RNA particles are found.
 
 \subsection{How do RNA particles and the total number of infections relate to each other?}
 \label{sec:sub4}
@@ -640,7 +639,13 @@ If we had infinite time and resources, we would like to enrich our analysis by i
 
 \section{Discussion}
 \label{sec:discussion}
+When we started our quest, our aim was to build a model around RNA particles in the sewage in order to predict COVID-19 infections. We soon realized that this might be unrealistic. In order to find out how the amount of RNA particles in the sewage and COVID-19 infections are related we had to conduct a whole research on its own. We therefore shifted our focus to understanding this relationship. We regard this report as a stepping stone to a model that can predict the number of COVID-19 cases.
 
+As any research, our research has limitations. Our original dataset contained many missing values. We dealed with this by applying LOCF. This method has several drawbacks. It is a conservative method according to @streiner2008missing. More specifically this means that the estimates of the amount of RNA particles are an underestimation. A second problem wth the method is that it does not provide a measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. So we do not know how wrong the estimate is. 
+
+A second limitation of our study is that we discarded several outliers. In our analysis of the relationship between COVID-19 infections and RNA particles in the sewage we stumbled upon extreme values. These values had such an impact on the correlation for the particular region that we decided to discard them. We could not find out what these outliers were caused by. So it is possible that we threw away relevant information. 
+
+Third, we are still unable to explain why the trend of RNA particles in the sewage per region fluctuates.Something else we could not explain are the different correlations between RNA particles in the sewage and COVID-19 infections on regional level. The fluctuations and the the different correlations may be caused by the same thing that is manifest on the regional level. Future research could focus on this.
 \endgroup
 \newpage
 
