@@ -407,7 +407,7 @@ totalperregion(used_dates)
 As can be seen in \ref{fig:nice}, the number of cases per 100,000 inhabitants varies per security region. For example, the number of cases in Amsterdam-Amstelland is much higher than in Zeeland. Moreover, the increase in cases had a different trend in Rotterdam-Rijnmond compared to Amsterdam-Amstelland. 
 
 
-```{r}
+```{r fig.width = 10, include = FALSE}
 tot_frame <- totalperregion(used_dates)[[1]]
 
 diffperregion <- function(tot_frame) {
@@ -567,21 +567,11 @@ output <- list (tot_frame, plot)
 corperregion(good_frame)
 #throw away the outliers, so we can actually see the other dots
 better_frame <- good_frame[good_frame$RNA.flow < 4e+14,]
+outlier_frame <- good_frame[!good_frame$RNA.flow < 4e+14,] #save separate dataframe with only outliers
 #and try it again
 corperregion(better_frame)
 #because of the size of this figure, we saved it and included it manually
 ```
-##move to appendix: attempt to colour outliers
-```{r}
-#try the function, see how it looks
-corperregion(good_frame)
-#throw away the outliers, so we can actually see the other dots
-better_frame <- good_frame[good_frame$RNA.flow < 4e+14,]
-outlier_frame <- good_frame[!good_frame$RNA.flow < 4e+14,]
-#and try it again
-```
-
- 
 
 \begin{figure}[!hbt]
 \centering
@@ -922,3 +912,16 @@ plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "greenyellow", pch =
 abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
 ```
 
+#Plot with the 3 outliers we removed coloured red
+```{r}
+ggplot(better_frame, aes(x = RNA.flow, y = Increase)) +
+  geom_point(stat = 'identity', color = "greenyellow") +
+  geom_point(data = outlier_frame, stat = 'identity', color = "red") +
+  labs(title = "Correlation between RNA flow and increase in nr of cases per region", subtitle = "Three outliers we removed colored red", x = "RNA flow", y = "Increase") + 
+  theme(plot.title = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  facet_wrap(. ~ `Region`) +
+  theme_minimal() +
+  stat_cor(method = "pearson", label.x = 3, label.y = 1000)
+
+```
