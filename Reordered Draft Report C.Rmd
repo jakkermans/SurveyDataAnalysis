@@ -315,7 +315,7 @@ a2 <- totalCalculator(used_dates)
 #this function calculates the difference in reported cases between one day and the day before that:
 differenceCalculator <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset
-  differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of        dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.  
+  differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.  
   
   #subtract nr of reported cases of the day before each day to get the difference
   for (i in 1:(length(differences))) {
@@ -366,11 +366,11 @@ Next, we examined if this trend differs between the various security regions in 
 ```{r fig.width = 10, include = FALSE}
 #in the data preparation, we already multiplied the municipality population by 1000,
 #so no need to do that again.
-#however, we do need make a new variable containing the number of cases per 100.000 people
-#to do that, we multiple the total number of reported cases by 100.000 divided by the municipality population and give it an informative name.
+#however, we do need make a new variable containing the number of cases per 100,000 people
+#to do that, we multiply the total number of reported cases by 100,000 divided by the municipality population and give it an informative name.
 used_dates$cases_per_100000 <- used_dates$MN_total.reported * (100000/used_dates$MN_pop)
 
-#make a function that calculates the mean number of infection per 100.000 inhabitants per day per security region
+#make a function that calculates the mean number of infection per 100,000 inhabitants per day per security region
 totalperregion <- function(used_dates) {
 
 selection <- used_dates %>% select(newdate, MN_name, SR_name, cases_per_100000) #create dataframe with only the variables we need
@@ -383,18 +383,10 @@ tot_frame <- tot_frame[order(tot_frame$SR_name),]  #reorder the resulting datafr
   #and make the total number of reported cases numeric
   tot_frame$Value <- as.numeric(tot_frame$Value)
   
-#SAVE AS SEPARATE PICTURES
-for (var in unique(tot_frame$`Security Region`)) {
-plots <- ggplot(subset(tot_frame, tot_frame$`Security Region` == var), aes(as.Date(Date), Value)) +
-      geom_bar(stat = 'identity', color = "greenyellow") +
-      labs(x = "Sample Date", y = "Reported number of cases per 100,000 inhabitants", title = paste0(var)) + scale_x_date(date_labels = "%B")
- ggsave(paste0(var,'.png'), width = 20, height = 20, units = "cm")
-    }
-
 #WRAP IN ONE FRAME
 plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
       geom_bar(stat = 'identity', color = "greenyellow") +
-      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%B") +
+      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%b") +
   theme_minimal()
   
 output <- list (tot_frame, plot)
@@ -418,18 +410,15 @@ As can be seen in \ref{fig:nice}, the number of cases per 100,000 inhabitants va
 \label{sec:sub3}
 
 We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we visualized the distribution of the RNA particles in the Netherlands over time. This figure can be seen in the appendix. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. The numbers of the amount of RNA particles in the sewage per day fluctuate more than the number of new infections. 
+
 The aforementioned plot shows the total number of RNA particles per day. The number of installations included differs each day, which can be seen in the appendix. This may be an explanation for the fluctuation in the amount of RNA particles measured each day. To correct for this we also plotted the mean level of RNA particles in the sewage per day. The plot, which can be seen in the appendix, is smoother than the plot that shows the totals. However, there is still some fluctuation. If in all installations the same amount of RNA particles were found, you would not expect fluctuations. In that case the mean level is not affected by a missing installation. This suggests that in different installations a different amount of RNA particles can be found. Since different installations care for different regions, different regions may have different trends. In order to explore this we plotted the total amount of RNA particles found in the sewage for per day for each region. 
 As can be seen in the figure, the trend of the amount of RNA particles found differs per security region. For example, the amount of RNA particles found in Friesland is lower than in Midden- en West-Brabant. Also, in Friesland there is not really a peak, whereas there is clear peak in Midden- en West-Brabant. The trends per region look similar to the overall trend. They loosely follow the trend of infections, but there are still fluctuations. 
 
 ```{r fig.width = 10, include = FALSE}
-#in the data preparation, we already multiplied the municipality population by 1000,
-#so no need to do that again.
-#however, we do need make a new variable containing the number of cases per 100.000 people
-#to do that, we multiple the total number of reported cases by 100.000 divided by the municipality population and give it an informative name.
-
-#make a function that calculates the mean number of infection per 100.000 inhabitants per day per security region
+#create adjusted RNA flow measure to account for STPs that treat water from multiple SRs. 
 used_dates$adjusted_RNA_flow <- (used_dates$TP_RNA.flow.per.100000.locf *    used_dates$TP_percentage.in.SR.locf)
 
+#make a function that calculates the mean RNA flow per day per security region
 RNAperregion <- function(used_dates) {
 
 selection <- used_dates %>% select(newdate, TP_code, SR_name, adjusted_RNA_flow) #create dataframe with only the variables we need
@@ -448,7 +437,7 @@ plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
       ylim(0, 3.5e+14) + 
       labs(x = "Date", y = "Mean RNA flow") + 
       facet_wrap(. ~ `Security Region`) + 
-  scale_x_date(date_labels = "%B")+
+  scale_x_date(date_labels = "%b")+
   theme_minimal()
   
 output <- list (tot_frame, plot)
@@ -628,15 +617,6 @@ ggplot(final_map)+
   geom_point(data = tp_data, aes(x = TP_long, y = TP_lat, colour = SR_name))
 ```
 
-\section{Conclusion}
-\label{sec:conclusion}
-
-As of yet, we are unable to make a reliable estimate of the true number of infected people in the Netherlands. First and foremost, this is due to the unstable nature of the correlation between the RNA flow and the total number of recorded infections. However, the moderate, positive correlation between these two variables indicates that the RNA flow becomes an increasingly better predictor as we get further along in the pandemic. If we do essay to construct a prediction model, we recommend to use only the most recent RNA flow data to build it, as they are likely the most reliable. 
-
-Our next line of investigation will be to try to combine the RNA flow as a predictor with other available variables in our dataset, such as population density. We would also like to separate this analysis by security region, to isolate the effect of geographic location on the predictor. 
-
-If we had infinite time and resources, we would like to enrich our analysis by incorporating other types of data in our analysis. For example, we could use behavioural data on when people are more or less likely to get tested when displaying symptoms, to improve the estimate of the true number of infected people. Another option would be to include environmental data on how much rain fell in each region on each day, to correct for the influence this might have on the concentration of RNA particles in the sewage water. For now, we conclude that the RNA flow is an imperfect indicator of the true number of infected people in the Netherlands, but that it could potentially be very valuable in combination with other data sources. 
-
 \section{Discussion}
 \label{sec:discussion}
 When we started our quest, our aim was to build a model around RNA particles in the sewage in order to predict COVID-19 infections. We soon realized that this might be unrealistic. In order to find out how the amount of RNA particles in the sewage and COVID-19 infections are related we had to conduct a whole research on its own. We therefore shifted our focus to understanding this relationship. We regard this report as a stepping stone to a model that can predict the number of COVID-19 cases.
@@ -646,6 +626,18 @@ As any research, our research has limitations. Our original dataset contained ma
 A second limitation of our study is that we discarded several outliers. In our analysis of the relationship between COVID-19 infections and RNA particles in the sewage we stumbled upon extreme values. These values had such an impact on the correlation for the particular region that we decided to discard them. We could not find out what these outliers were caused by. So it is possible that we threw away relevant information. 
 
 Third, we are still unable to explain why the trend of RNA particles in the sewage per region fluctuates.Something else we could not explain are the different correlations between RNA particles in the sewage and COVID-19 infections on regional level. The fluctuations and the the different correlations may be caused by the same thing that is manifest on the regional level. Future research could focus on this.
+
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+As of yet, we are unable to make a reliable estimate of the true number of infected people in the Netherlands. First and foremost, this is due to the unstable nature of the correlation between the RNA flow and the total number of recorded infections. However, the moderate, positive correlation between these two variables indicates that the RNA flow becomes an increasingly better predictor as we get further along in the pandemic. If we do essay to construct a prediction model, we recommend to use only the most recent RNA flow data to build it, as they are likely the most reliable. 
+
+Our next line of investigation will be to try to combine the RNA flow as a predictor with other available variables in our dataset, such as population density. We would also like to separate this analysis by security region, to isolate the effect of geographic location on the predictor. 
+
+If we had infinite time and resources, we would like to enrich our analysis by incorporating other types of data in our analysis. For example, we could use behavioural data on when people are more or less likely to get tested when displaying symptoms, to improve the estimate of the true number of infected people. Another option would be to include environmental data on how much rain fell in each region on each day, to correct for the influence this might have on the concentration of RNA particles in the sewage water. For now, we conclude that the RNA flow is an imperfect indicator of the true number of infected people in the Netherlands, but that it could potentially be very valuable in combination with other data sources. 
+
+
 \endgroup
 \newpage
 
