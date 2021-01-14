@@ -6,44 +6,22 @@ fontsize: 12pt
 
 author: 
   - name          : "Jannick Akkermans"
-    affiliation   : "1"
-    corresponding : yes    # Define only one corresponding author
-    email         : "my@email.com"
   - name          : "Sander van Gestel"
-    affiliation   : "1"
   - name          : "Lauke Stoel"
-    affiliation   : "1"
   - name          : "Annemarie Timmers"
-    affiliation   : "1"
 
 affiliation:
-  - id            : "1"
-    institution   : "Utrecht University"
+  - id            : 
+    institution   : Survey Data Analysis (201300001)
+  - id            : 
+    institution   : Under the supervision of Dr. P. Lugtig
+  - id            : 
+    institution   : Utrecht University
 
 authornote: |
   Add complete departmental affiliations for each author here. Each new line herein must be indented, like this line.
 
   Enter author note here.
-
-abstract: |
-  One or two sentences providing a **basic introduction** to the field,  comprehensible to a scientist in any discipline.
-  
-  Two to three sentences of **more detailed background**, comprehensible  to scientists in related disciplines.
-  
-  One sentence clearly stating the **general problem** being addressed by  this particular study.
-  
-  One sentence summarizing the main result (with the words "**here we show**" or their equivalent).
-  
-  Two or three sentences explaining what the **main result** reveals in direct comparison to what was thought to be the case previously, or how the  main result adds to previous knowledge.
-  
-  One or two sentences to put the results into a more **general context**.
-  
-  Two or three sentences to provide a **broader perspective**, readily comprehensible to a scientist in any discipline.
-  
-  <!-- https://tinyurl.com/ybremelq -->
-  
-keywords          : "keywords"
-wordcount         : "X"
 
 bibliography      : ["r-references.bib"]
 
@@ -77,18 +55,21 @@ header-includes:
 ---
 
 ```{r setup, include = FALSE}
+#load all the packages we need
 library("papaja")
 library(dplyr)
 library(tidyverse)
 library(DescTools)
-library(tibble) # better printing  # obviously
+library(tibble) #better printing  #obviously
 library(mapproj)
 library(ggplot2)
 library(ggpubr)
 library(hash)
+#and say where R can find the references 
 r_refs("r-references.bib")
 knitr::opts_chunk$set(echo = FALSE, comment = "", cache = TRUE, fig.align = "center")
 #setwd("C:/Users/sande/OneDrive/Documenten/M&S")
+#load the data
 dat <- readRDS("covid cases waste + tests.RDS")
 ```
 
@@ -107,7 +88,7 @@ dat <- readRDS("covid cases waste + tests.RDS")
   skip={0.5pt}}
 
 ```{r analysis-preferences}
-# Seed for random number generation
+#seed for random number generation
 set.seed(42)
 knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 ```
@@ -120,7 +101,6 @@ knitr::opts_chunk$set(cache.extra = knitr::rand_seed)
 # SR = Security Region
 # MN = Municipality
 # TP = Treatment Plant
-
 dat <- dat %>% rename(SR_code = code, 
                       SR_name = naam,
                       MN_name = Municipality_name, 
@@ -145,7 +125,7 @@ dat <- dat %>% rename(SR_code = code,
                       Representative_measurement)
 
 dat <- dat %>% select(newdate, SR_code, SR_name, MN_code, MN_name, MN_code:TP_RNA.per.ml, TP_RNA.flow.per.100000, TP_representative.measurement)
-
+#and check whether it has worked
 str(dat)
 
 # Some variables are reported as character strings, that should be numeric 
@@ -153,81 +133,84 @@ str(dat)
 # This is because the Dutch notation for decimal numbers is comma's, where R would 
 # expect dots, and vice versa. Other variables are noted in the wrong order of size # because of this. 
 # Replace comma's by dots for all variables with decimals
-
 dat$MN_sizekm2 <- gsub(",", ".", dat$MN_sizekm2)
 dat$MN_popperkm2 <- gsub(",", ".", dat$MN_popperkm2)
 dat$TP_percentage.in.SR <- gsub(",", ".", dat$TP_percentage.in.SR)
 dat$TP_RNA.flow.per.100000 <- gsub(",", ".", dat$TP_RNA.flow.per.100000)
 
-# Multiply by 1000 to get rid of the "." in the population variable
+#multiply by 1000 to get rid of the "." in the population variable
 dat <- dat %>% mutate(MN_pop = MN_pop*1000)
 
-# Redefine variables as numeric:
+#redefine variables as numeric:
 dat$TP_Yco <- as.numeric(dat$TP_Yco)
 dat$MN_popperkm2 <- as.numeric(dat$MN_popperkm2)
 dat$MN_sizekm2 <- as.numeric(dat$MN_sizekm2)
 dat$TP_RNA.flow.per.100000 <- as.numeric(dat$TP_RNA.flow.per.100000)
 dat$TP_percentage.in.SR <- as.numeric(dat$TP_percentage.in.SR)
 
-# Check the structure again
+#check the structure again
 str(dat)
 ```
 
-In December 2019, a virus known as SARS-Cov-2 (COVID-19) was initiated in Wuhan, China. This variant of the SARS coronavirus, which shocked the world in 2003, caused a worldwide pandemic with many consequences. However, this virus is more dangerous since 20% to 40% of the patients show no symptoms, contributing to the silent spread of the virus [@vallejo2020highly].
+In December 2019, a virus known as SARS-Cov-2 (COVID-19) was identified in Wuhan, China. This new variant of the SARS coronavirus caused a worldwide pandemic with far-reaching consequences. An important factor contributing to the silent spread of the virus is the fact that 20 to 40% of the patients show no symptoms, [@vallejo2020highly].
 
-Although patients do not always show symptoms of the virus, they do leave RNA particles of the virus in their feces as shown by for example @pan2020viral. The virus can sustain itself for a long period of time within the feces, in some cases even one or more months after the respective patient has tested negative for RNA particles in their feces [@vallejo2020highly]. Therefore, the amount of RNA particles could be an indicator of the true number of COVID-19 patients within a country or security region. 
+Although patients do not always show symptoms of the virus, they often do excrete RNA particles of the virus in their faeces as shown by for example [@pan2020viral]. The virus can sustain itself for a long period within the faeces, in some cases even for one or more months after the respective patient has tested negative for COVID-19 in their respiratory samples [@vallejo2020highly]. Therefore, the amount of RNA particles could be a valuable indicator of the true number of COVID-19 patients within a country or municipality. This information gives an indication of the true number of contagious people at any given moment. This is important, because it could give us a meaningful indication of the severity of the pandemic on a given moment. Since the number of positive tests on its own is not as informative, given contextual information, like testing capacity and willingness, is not considered alongside [@silver2020coronavirus].  
 
-Ever since the start of the pandemic in the Netherlands, the National Institute for Public Health and the Environment (RIVM) has been collecting samples from sewage treatment plants (STPs) and testing them for RNA presence. The research started small, with only 29 out of the 355 STPs in April 2020, but since the beginning of September of the same year, all STPs in the Netherlands are sampled once or multiple times a week. 
-
-After the samples are taken, they are transported at a controlled temperature to the RIVM, where they are analysed by researchers for RNA particles. RNA is isolated and Polymerase Chain Reaction (PCR) is performed on the samples to determine the amount of RNA particles present in the wastewater [@Riool].
-
-Multiple equations result in an estimate of the number of RNA particles per 100,000 inhabitants of the Netherlands, which was made possible by mapping the number of households connected to a STP. In these equations, the RIVM corrects for the amount of water that flows into the STPs [@Rijksoverheid]. This is needed, because when it has rained, this results in more water in the sewage. More water would lower the concentration of RNA particles in the wastewater, hereby possibly distorting the estimate. The resulting numbers are presented on the Corona Dashboard [@Dashboard]. 
-As RNA can be used as an indicator for estimating the true number of covid cases, this project attempts to assess whether RNA particles are a good predictor for the true number of covid cases. We work towards this goal through answering the following sub-questions:
+Ever since the start of the pandemic in the Netherlands, the National Institute for Public Health and the Environment (RIVM) has been collecting samples from sewage treatment plants (STPs) and testing them for RNA presence. Based on these data, we aim to evaluate whether RNA particles are an adequate predictor for the true number of covid cases. We work towards this goal through answering the following sub-questions:
 \begin{APAenumerate}
   \setlength{\itemsep}{0pt}
   \setlength{\parskip}{0pt}
-   \item How does the total number of reported infections in the Netherlands as a whole develop over time? 
-   \item What does this trend look like displayed per 100,000 inhabitants of the Netherlands? 
+ \item How does the cumulative number of reported cases in the Netherlands as a whole develop over time? 
+   \item What does this trend look like in the different security regions? 
    \item What is the mean level of RNA particles found in the water per 100,000 inhabitants? 
-   \item How do RNA particles and the total number of infections relate to each other? 
+   \item How do RNA particles and the increase in the number of cases relate to each other? 
 \end{APAenumerate}
 
-The remainder of this report is structured as follows. Prior research in the field of measuring RNA is discussed in Section \ref{sec:litrev}. Section \ref{sec:data} describes the data and the challenges they provided. The methodology used to answer the subquestions, as well as the results are discussed in Section \ref{sec:metresults}. Section \ref{sec:conclusion} interprets and aggregates the results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
+The remainder of this report is structured as follows. Methods used by the RIVM to measure RNA and prior research in this field are discussed in Section \ref{sec:litrev}. Section \ref{sec:data} describes the data and the challenges they provided. The methodology used to answer the subquestions, as well as the results are discussed in Section \ref{sec:metresults}. Section \ref{sec:conclusion} interprets, aggregates the results and subsequently provides a conclusion. Finally, Section \ref{sec:discussion} discusses certain things that could have gone better in this research.  
 
 \section{Literature Review}
 \label{sec:litrev}
 
-As the aim of this project is to estimate the true number of positive corona tests in a security region from the RNA in the wastewater, literature regarding RNA as a predictor of positive cases and PCR, by which RNA estimates are retrieved, should be reviewed. The following section therefore dives deeper into the usefulness of RNA particles as a predictor of corona cases and the method by which the number of particles is determined.
+As the aim of this project is to assess the predictive quality of RNA of the true number of positive COVID-19 cases, literature regarding RNA as a predictor of positive cases and PCR, by which RNA estimates are retrieved, should be reviewed. The following section therefore dives deeper into the usefulness of RNA particles as a predictor of COVID-19 cases, the sampling method used to retrieve sewage from the STPs, and the method by which the number of particles is determined.
 
 \subsection{Relevance of measuring RNA in sewage water}
 Early on in the pandemic, the RIVM began sampling wastewater. One of the reasons to do this, was the use of wastewater samples to detect diseases in the past. For example, wastewater has been used to detect and monitor the spread of polio since the 1980s, with the World Health Organization (WHO) issuing guidelines to do this [@CDC; @mao2020potential]. 
-Moreover, RNA was found to be present in the feces of both symptomatic and asymptomatic carriers, hereby being able to capture both types of infections [@randazzo2020sars]. Because of this, RNA can serve as an indicator for rises and falls in infections, independent of the number of positive tests. In addition, as RNA is measured locally, it can not only serve as a national, but also a regional indicator of the total number of infections. Altogether, wastewater sampling provides some valuable opportunities to improve the detection and monitoring of the spread of COVID-19.
+
+Moreover, RNA was found to be present in the faeces of both symptomatic and asymptomatic carriers, hereby being able to capture both types of cases [@randazzo2020sars]. Because of this, RNA can serve as an indicator for rises and falls in cases, independent of the number of positive tests. In addition, as RNA is measured locally, it can not only serve as a national, but also a regional indicator of the true number of cases. Altogether, wastewater sampling provides some valuable opportunities to improve the detection and monitoring of the spread of COVID-19.
+
+\subsection{Sampling of sewage data}
+The research into the sewage by the RIVM started small, with only 29 out of the 355 STPs in April 2020, but since the beginning of September of the same year, all STPs in the Netherlands are sampled once or multiple times a week. 
+After the samples are taken, they are transported at a controlled temperature to the RIVM, where they are analysed by researchers for RNA particles. RNA is isolated and Polymerase Chain Reaction (PCR) is performed on the samples to determine the amount of RNA particles present in the wastewater [@Riool]. This technique is explained in the next section.
+
+Multiple equations result in an estimate of the number of RNA particles per 100,000 inhabitants of the Netherlands, which was made possible by mapping the number of households connected to a STP. In these equations, the RIVM corrects for the amount of water that flows into the STPs [@Rijksoverheid]. This is needed, because when it has rained, this results in more water in the sewage. More water would lower the concentration of RNA particles in the wastewater, hereby possibly distorting the estimate. The resulting numbers are presented on the Corona Dashboard [@Dashboard]. 
 
 \subsection{The PCR method}
-As we have just established that measuring RNA is important, it is also important to understand the method by which the measuring is done. As mentioned in the introduction, sewage water samples are transported at a controlled temperature to the RIVM. There, researchers isolate the RNA of the virus and perform a technique called PCR in order to determine the number of RNA in the sewage water. 
-
+As we have just established that measuring RNA is important, it is also important to understand the method by which the measuring is done. As mentioned in the introduction, sewage samples are transported at a controlled temperature to the RIVM. There, researchers isolate the RNA of the virus and perform a technique called PCR in order to determine the number of RNA in the sewage. 
 PCR follows a three step process which consists of (1) denaturation of double-stranded DNA, (2) annealing of primers, and (3) primer extension [@schochetman1988polymerase]. Denaturation of double-stranded DNA involves separating the two strands that together form the complex DNA-sequence. In the next step, primers are added to both strands. A primer is a single strand that is complementary to the DNA-sequence it is attached to. The new combinations of DNA strands are then synthesized together to form new DNA sequences. This process is iterated until there is not enough primer left to form new sequences. Afterwards, the amount of DNA is measured to provide the total amount of DNA in a given sample.
 
-The amount of RNA is determined through an adaptation of this technique, called Reverse Transcription-Polymerase Chain Reaction (RT-PCR). The procedure is as follows according to @rio2014reverse: first, a primer is added to the RNA strand. This new synthesized RNA-DNA combination is then used as a template for Reverse Transcriptase, in which a single-stranded cDNA copy is created. However, this cDNA strand is only a proportion of the original RNA strand. The newly created strand is finally used in the PCR method to determine the amount of RNA particles in the population (i.e. the sewage water of a security region in the Netherlands).
+The amount of RNA is determined through an adaptation of this technique, called Reverse Transcription-Polymerase Chain Reaction (RT-PCR). The procedure is as follows according to @rio2014reverse: first, a primer is added to the RNA strand. This new synthesized RNA-DNA combination is then used as a template for Reverse Transcriptase, in which a single-stranded cDNA copy is created. However, this cDNA strand is only a proportion of the original RNA strand. The newly created strand is finally used in the PCR method to determine the amount of RNA particles in the population (i.e. the sewage of a security region in the Netherlands).
 
-Although the PCR method can produce results relatively fast according to @garibyan2013research, it does have a few limitations. First of all, PCR is a highly sensitive technique, so any contamination of the sample can lead to misleading results. Secondly, PCR depends on the addition of a primer to create new DNA sequences. The drawback in this case is that the creation of the primer requires prior knowledge of the target sequence you are attempting to create [@garibyan2013research]. Therefore, PCR can only be applied to known pathogens or genes. Nevertheless, this method has its advantages and is currently used by the RIVM.
+Although the PCR method can produce results relatively fast according to @garibyan2013research, it does have a few limitations. First of all, PCR is a highly sensitive technique, so any contamination of the sample can lead to misleading results. Secondly, PCR depends on the addition of a primer to create new DNA sequences. The drawback in this case is that the creation of the primer requires prior knowledge of the target sequence you are attempting to create [@garibyan2013research]. Therefore, PCR can only be applied to known pathogens or genes. 
 
-\subsection{RNA as a predictor for COVID infections}
-Once the number of RNA has been measured, it could be used as a predictor for the number of COVID infections. However, there is something that needs to be taken into account when using this predictor. @peccia2020measurement attempted to track the spread of COVID-infections in Connecticut by measuring RNA flow in wastewater. They found that RNA concentrations in wastewater were six to eight days ahead of the corresponding reports of positive tests. Therefore, RNA cannot be compared to the number of positive tests one-on-one, but rather, with a multiple day time-lag. 
+\subsection{RNA as a predictor of COVID cases}
+Once the number of RNA has been measured, it could be used as a predictor of the true number of COVID-19 cases. However, there is something that needs to be taken into account when using this predictor. @peccia2020measurement attempted to track the spread of COVID-19 cases in Connecticut by measuring RNA flow in wastewater. They found that RNA concentrations in wastewater were six to eight days ahead of the corresponding reports of positive tests. Therefore, RNA cannot be compared to the number of positive tests on the same day, but rather, with a multiple day time-lag. 
 
-Another problem with the current data on RNA in sewage water, is that it is unknown how much RNA particles need to be shed, for them to be detected during testing [@CDC]. This complicates prediction, as some RNA may go undetected, resulting in an underestimate of the total number of infections in the Netherlands as a whole (or a single region, for that matter). 
+Another problem with the current data on RNA in sewage, is that it is unknown how much RNA particles need to be shed, for them to be detected during testing [@CDC]. This complicates prediction, as some RNA may go undetected, resulting in an underestimate of the true number of cases in the Netherlands as a whole (or a single region, for that matter). 
 
-Finally, when taking a sample of the sewage water, the concentration of RNA that it contains may be less than the original concentration in the sewage water. This may be due to the type of the environment or the physical and chemical properties of the environment [@lahrich2020review]. For example, some RNA particles may die due to the temperature of the wastewater or because of too much sunlight exposure. Since the RNA concentration can be lowered, we need to be careful when using it as a predictor to estimate the number of COVID infections.
+Finally, when taking a sample of the sewage, the concentration of RNA that it contains may be lower than the original concentration in the sewage. This may be due to the physical and chemical properties of the environment the RNA is detected in [@lahrich2020review]. For example, some RNA particles may die due to the temperature of the wastewater or because of too much sunlight exposure. Since the RNA concentration can decrease, we need to be careful when using it as a predictor of the number of COVID-19 cases.
 
 \section{Data}
 \label{sec:data}
+
 \subsection{Structure of the data}
-We are working with two datasets, both collected by the Dutch National Institute for Public Health and the Environment (RIVM). The first dataset contains the total number of positive tests reported per day per municipality. It also contains information on key characteristics of the municipality, such as population density and which security region it is part of. The second dataset contains data recorded on the level of STPs. The key variable here is the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage water per 100,000 inhabitants. This dataset also contains crucial metadata of the STPs, such as in which security region the area of responsibility of this STP falls. The two datasets were matched to each other by the variable in which security region a municipality and a treatment plant’s area fall respectively.
+We are working with two datasets, both collected by the RIVM. The first dataset contains the total number of positive tests reported per day per municipality [@datacases]. It also contains information on key characteristics of the municipality, such as population density and which security region it is part of. The second dataset contains data recorded on the level of STPs [@datawater]. The key variable here is the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage per 100,000 inhabitants. This dataset also contains crucial metadata of the STPs, such as in which security region the area of responsibility of this STP falls. The two datasets were matched by the variable in which security region a municipality and a STP’s area fall respectively.
 
 \subsection{Challenges in the data}
-Our goal is to estimate the true number of COVID-19 patients at any given day, based on the data we have available describing the RNA flow in the sewage water. To do this, we first have to establish if there is a relationship between the RNA flow and the number of positive tests per day. Given the data structure, we are faced with a few challenges before we can take on this question.
+Our goal is to assess the usefulness of RNA flow in sewage as a predictor of the true number of COVID-19 patients in the Netherlands at any given day. To do this, we first have to establish if there is a relationship between the RNA flow and the number of positive tests per day. Given the data structure, we are faced with a few challenges before we can take on this question.
 
-First of all, the data on the number of positive tests are recorded on the level of municipalities, whereas the data on RNA flow are recorded on the level of the STP. In the most straightforward cases, we can aggregate the RNA flow data to municipality level data by virtue that the datasets were already matched by security region code. See SR1 of Figure \ref{fig:diagram}.
+\subsubsection{Level of measurement}
+First of all, the data on the number of positive tests are recorded on the level of municipalities, whereas the data on RNA flow are recorded on the level of the STPs. In the most straightforward cases, we can aggregate the RNA flow data to municipality level data by virtue that the datasets were already matched by security region code. See SR1 of Figure \ref{fig:diagram}.
+
 
 \begin{figure}[!hbt]
 \begin{center}
@@ -239,31 +222,44 @@ First of all, the data on the number of positive tests are recorded on the level
 \end{center}
 \end{figure}
 
-However, some STPs also treat water from outside their primary security region, creating double entries in the dataset and making simple matching impossible. Luckily, the dataset also provides information on what percentage of the water a STP processes comes from which security region, so we can weight the RNA flow by this variable. See SR2 of Figure \ref{fig:diagram}.
-Furthermore, some very large municipalities produce so much sewage water in one day, that multiple treatment plants are required to process it, causing a second kind of double entries. See SR3 of Figure \ref{fig:diagram}. Unfortunately, there are no data available that specify how much of the water from these large municipalities goes to which treatment plant, making it impossible to establish if there is a relationship between the RNA flow and the number of positive cases on the municipality level.
+However, some STPs also treat water from outside their primary security region, creating double entries in the dataset and making simple matching impossible. Fortunately, the dataset also provides information on what percentage of the water a STP processes comes from which security region, so we can weight the RNA flow by this variable. See SR2 of Figure \ref{fig:diagram}.
 
-We take the above relationships into account in our analyses. Furthermore, we conclude that we have to aggregate our data to the Security Region level when establishing a relationship between RNA flow and number of positive cases, to get an accurate indicator. Moreover, the data we use in our analyses are a subset of the original dataset, because the dataset only includes all STPs from the 7th of September onwards. 
+Furthermore, some very large municipalities produce so much sewage in one day that multiple STPs are required to process it, causing a second kind of double entries. See SR3 of Figure \ref{fig:diagram}. Unfortunately, there are no data available that specify how much of the water from these large municipalities goes to which treatment plant, making it impossible to establish if there is a relationship between the RNA flow and the number of positive tests on the municipality level.
 
-Another problem with a longitudinal study such as this one is that missing values can occur at any given point during the study. This could subsequently affect the final results in a negative way. Because of the missing data, not every security region has data on RNA flow for one day and data on reported cases seven days later. As this would be the ideal situation, the missing RNA flow data will be imputed. More specifically, Last Observation Carried Forward (LOCF) imputes the missing data due to the scope of the project. LOCF is a simple imputation method that imputes missing data for an individual by assigning the last observed value for that individual to each missing value [@cook2004marginal]. Although this does solve the problem of missing data, it is not the best imputation method and it does have some limitations.
+We conclude that we have to aggregate our data to the security region level when establishing a relationship between RNA flow and number of positive tests, to get an accurate indicator. 
 
-First of all, it is a conservative imputation method according to @streiner2008missing. This means that it underestimates what the missing RNA flow values would have been as this technique assumes that an individual does not change at the times of missing values. Therefore, LOCF introduces some bias in the estimates due to this underestimation. Nevertheless, it would still provide better estimates than using only the observed cases for the analyses. Second, LOCF has an ad hoc nature which means that it has no measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. This implies that no additional covariates can be included to reduce bias introduced by this imputation method. 
+\subsubsection{Consistency of measurement}
+Another challenge of this dataset is that the way the RNA flow in the sewage is recorded changed during the period time frame that data were collected. Up until the 7th of September, the RNA flow was measured as the average concentration of SARS-CoV-2 RNA per mL of unfiltered sewage. From the 7th of September onwards, it was recorded as the average concentration of SARS-CoV-2 RNA measured in the daily amount of sewage, per 100,000 inhabitants. This last measurement corrects for differences in the number of people an STP treats sewage for. 
+
+Moreover, it was not until the 7th of September that all STPs in the Netherlands started participating in reporting the average RNA flow. Furthermore, not every STP reports this measure daily or even consistently. 
+
+We decided to use a subset of the original dataset in determining the usefulness of RNA flow as a predictor of the true number of COVID patients, to foster internal consistency of measurement. The subset we used spanned from the 7th of September to the 11th of November, when we downloaded these data. We deal with the problem of missing data in the next section.
+
+\subsubsection{Missing data}
+This study suffers from a missing data problem, because not all STPs report their RNA flow on a daily basis or at a consistent frequency (i.e. once a week on set days). As a result, not every security region has data on RNA flow for each observation of reported cases seven days later. We need these combinations to assess the usefulness of the RNA flow as a predictor of the true number of cases. Since this problem lies at the core of our analysis, we decided to impute the missing RNA flow data. 
+
+We elected the Last Observation Carried Forward (LOCF) imputation method as best fitting to the scope of the project. LOCF is a simple imputation method that imputes missing data for a unit of observation by assigning the last observed value for that unit of observation to each missing value [@cook2004marginal]. We can regard the non-reporting by one STP for a period of time as attrition from a longitudinal study, until their next report. We deem it fitting to carry their last report forward, because we can assume that people who suffer from COVID-19 and excrete RNA particles into the sewage water will do so for at least as long as their symptoms last. Therefore, the change in the RNA flow that the STPs report can be expected to be gradual and the last observed value can be regarded as a reasonable placeholder for the actual value. 
+
+Although this solves the problem of missing data, the method does have some limitations. First of all, it is a conservative imputation method according to @streiner2008missing. This means that - given that during the time span of our dataset, the number of COVID-19 cases has only increased - it likely underestimates the true RNA flow values, as this technique assumes that a unit of observation does not change at the times of missing values. Due to this underestimation, LOCF introduces some bias in the estimates. Nevertheless, it would still provide better estimates than if we used only the observed cases for the analyses. Second, LOCF has an ad hoc nature, which means that it has no measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. This implies that no additional covariates can be included to reduce bias introduced by this imputation method. We further reflect on the implications of our choice of imputation method on our results in the discussion section. 
+ 
 
 \section{Methodology and Results}
 \label{sec:metresults}
 
-In this section, the different subquestions are dealt with consecutively. First, the methodology that was used to answer the specfic question is described. Second, the results are displayed and discussed immediately afterwards. 
+In this section, the different subquestions are dealt with consecutively. First, the methodology that was used to answer the specific question is described. The results are displayed and discussed immediately afterwards. As to not clutter the flow of the text, we decided to display some of the less informative, though insightful figures in the appendix. It is mentioned in the text when this is indeed the case, after which the main takeaway of the figure is described shortly. 
 
-\subsection{How does the total number of reported infections in the Netherlands as a whole develop over time?}
+\subsection{How does the cumulative number of reported cases in the Netherlands as a whole develop over time?}
 \label{sec:sub1}
 
-In order to answer the first question, we needed a function that calculated the number of total reported infections per day. A function was written that aggregated the data by the number of reported infections in a municipality on a given day to the total number of reported infections on that day in the Netherlands as a whole, discarding double entries per municipality. The resulting output is visualized in Figure \ref{fig:2a}, where you can see the total number of reported infections we have had over time in the Netherlands. The second wave is also clearly visible, where it can be seen that the total number of reported infections increasing more rapidly in October compared to September. 
+In order to answer the first question, we needed a function that calculated the cumulative number of reported cases per day. Therefore, we wrote a function that aggregated the data by the number of reported cases in a municipality on a given day to the cumulative number of reported cases on that day in the Netherlands as a whole, discarding double entries per municipality. The resulting output is visualized in Figure \ref{fig:cumulcaseNL}, where you can see the cumulative number of reported cases in the Netherlands over time. The start of the second wave is also clearly visible, where the cumulative number of reported cases increases more rapidly in October compared to September. 
 
-We were also interested in the daily fluctuations of the number of reported infections in the Netherlands. To show this, we altered the function such that it would calculate the difference in total reported cases between each day and the day before. The results are visualized in Figure \ref{fig:2b}. We see that the peak of new infections in the second wave is somewhere at the end of October, as we would expect from the previous figure.  
+We were also interested in the daily fluctuations of the number of reported cases in the Netherlands. To show this, we altered the function such that it would calculate the difference in cumulative number of reported cases between each day and the day before. The results are visualized in Figure \ref{fig:newcaseNL}. We see that the peak of new cases in the second wave is somewhere at the end of October, as we would expect from the previous figure.  
 
 ```{r fig.width = 10, include = FALSE}
 #create dataframe with only the observations from 7th of September onward
 all_dates  <- unique(dat$newdate) #243 recorded dates, starting March 13th
 used_dates <- dat %>% filter(newdate %in% all_dates[-c(1:178)]) #dates from 7th of September
+#apply locf to the RNA flow and consequently, the percentage TP in SR
 used_dates$TP_RNA.flow.per.100000.locf <- LOCF(used_dates$TP_RNA.flow.per.100000)
 used_dates$TP_percentage.in.SR.locf <- LOCF(used_dates$TP_percentage.in.SR)
 
@@ -271,10 +267,9 @@ used_dates$TP_percentage.in.SR.locf <- LOCF(used_dates$TP_percentage.in.SR)
 totalCalculator <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset
   totals <- numeric(length(dates)) #make an object with the length of the number of dates
-  
-  #subtract nr of reported cases of the day before each day to get the difference
+  #do a for loop, so the reported cases are summed for all days
   for (i in 1:(length(totals))) {
-    step1 <- filter(used_dates, newdate == dates[i]) #select date we want to calculate the nr of new cases for
+    step1 <- filter(used_dates, newdate == dates[i]) #select date we want to calculate the nr of cases for
     
     #create data frame of the  dates, and remove duplicates (total reported per municipalities are the same across duplicates)
     df <- step1[!duplicated(step1[,"MN_name"]),] 
@@ -293,26 +288,26 @@ totalCalculator <- function(used_dates) {
   plot <- barplot(totals_frame$`Total number of reported infections`, 
                   col  = "greenyellow",
                   xlab = "Date", 
-                  ylab = "Reported infections", 
+                  ylab = "Reported cases", 
                   ylim = c(0,400000), 
                   names.arg = as.Date(dates))
   
-  #Output a data frame with the total of new cases per day
+  #output a data frame with the total of new cases per day
   output = list(totals_frame, plot)
   return(output)
 }
 
 ```
 
-```{r 2a, results = 'hide', fig.align = "center", fig.cap = x1, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r cumulcaseNL, results = 'hide', fig.align = "center", fig.cap = x1, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x1 <- paste(
-    "Cumulative number of reported infections per day in the Netherlands over time.")
+    "Cumulative number of reported cases per day in the Netherlands over time.")
 a2 <- totalCalculator(used_dates)
 
 ```
 
 ```{r fig.width = 10, include = FALSE}
-#this function calculates the difference in reported cases between one day and the day before that:
+#this function calculates the difference in reported cases between one day and the day before that
 differenceCalculator <- function(used_dates) {
   dates <- unique(used_dates$newdate) #create a list of unique dates in the dataset
   differences <- numeric(length(dates)-1) #make an object with the length of one fewer than the number of dates. Why one fewer? We cannot calculate the number of new reported cases of the first day, because the number of cases from the preceding day is unknown.  
@@ -341,7 +336,7 @@ differenceCalculator <- function(used_dates) {
   plot <- barplot(diff_frame$`Difference in reported infections`, 
                   col = "greenyellow", 
                   xlab = "Date", 
-                  ylab = "New reported infections", 
+                  ylab = "New reported cases", 
                   names.arg = as.Date(dates[-1]))
   
   #output a data frame with new cases per day
@@ -352,16 +347,16 @@ differenceCalculator <- function(used_dates) {
 
 ```
 
-```{r 2b, results = 'hide', fig.align = "center", fig.cap = x2, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r newcaseNL, results = 'hide', fig.align = "center", fig.cap = x2, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x2 <- paste(
-    "Number of new reported infections per day in the Netherlands over time")
+    "Number of new reported cases per day in the Netherlands over time")
 b2 <- differenceCalculator(used_dates)
 ```
 
 \subsection{What does this trend look like in the different security regions?}
 \label{sec:sub2}
 
-Next, we examined if this trend differs between the various security regions in the Netherlands. We calculated both the cumulative number of reported cases and the difference in number of reported cases per day for each of the 25 security regions. To be able to make a meaningful comparison between the different regions, we calculate these indicator per 100,000 inhabitants, as the population density differs between security regions. Below we show a selection of the resulting graphs. 
+Next, we examined if this trend differed between the various security regions in the Netherlands. We calculated both the cumulative number of reported cases per day for each of the 25 security regions. To be able to make a meaningful comparison between the different regions, we calculated this indicator per 100,000 inhabitants, correcting for differences in population density between security regions. See Figure \ref{fig:mapmunicipality} in Appendix \ref{sec:Amap} for a map of the Netherlands indicating where all municipalities are located, what security region they belong to, and how many cases are reported in each municipality. The higher concentration of municipalities and number of reported cases in for example the Randstad area supports our choice to calculate the cumulative number of cases in each security region per 100,000 inhabitants. We show the resulting graphs in Figure \ref{fig:cumulcaseSR}.
 
 ```{r fig.width = 10, include = FALSE}
 #in the data preparation, we already multiplied the municipality population by 1000,
@@ -386,7 +381,7 @@ tot_frame <- tot_frame[order(tot_frame$SR_name),]  #reorder the resulting datafr
 #WRAP IN ONE FRAME
 plot <- ggplot(tot_frame, aes(as.Date(Date), Value)) +
       geom_bar(stat = 'identity', color = "greenyellow") +
-      labs(x = "Date", y = "Reported number of cases per 100,000 inhabitants per security region") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%b") +
+      labs(x = "Date", y = "Reported cases per 100,000 inhabitants") + facet_wrap(. ~ `Security Region`) + scale_x_date(date_labels = "%b") +
   theme_minimal()
   
 output <- list (tot_frame, plot)
@@ -400,14 +395,16 @@ totalperregion(used_dates)
 \begin{figure}[!hbt]
 \centering
         \includegraphics{Reported Infections SR.png}
-    \caption{Number of cases per 100,000 inhabitants per security region}
-    \label{fig:nice}
+    \caption{Cumulative number of cases per 100,000 inhabitants per security region}
+    \label{fig:cumulcaseSR}
 \end{figure}
 
-As can be seen in \ref{fig:nice}, the number of cases per 100,000 inhabitants varies per security region. For example, the number of cases in Amsterdam-Amstelland is much higher than in Zeeland. Moreover, the increase in cases had a different trend in Rotterdam-Rijnmond compared to Amsterdam-Amstelland. 
+As can be seen in Figure \ref{fig:cumulcaseSR}, the number of cases per 100,000 inhabitants varies per security region both in magnitude and in development over time. For example, the number of cases in Amsterdam-Amstelland is much higher than in Zeeland. Moreover, the last recorded number of cases in Amsterdam-Amstelland is comparable to that of Rotterdam-Rijnmond, but the increase in cases had a much later onset and increased at a higher pace in the latter compared to the former.
 
+To be able to establish the predictive value of RNA for the total number of cases per region, we also needed to calculate the difference in the number of cases per region per day. This is because we expect the amount of RNA particles in the water not to have a strong relationship to the cumulative number of cases ever recorded, but to relate more closely to the change in the number of cases. We show the results of our calculations in Figure \ref{fig:newcaseSR}. Here we see confirmed that the number of cases peaked at different moments in the various regions. 
 
 ```{r fig.width = 10, include = FALSE}
+#save the dataframe produced by the previous function
 tot_frame <- totalperregion(used_dates)[[1]]
 
 diffperregion <- function(tot_frame) {
@@ -416,25 +413,27 @@ diffperregion <- function(tot_frame) {
   SRs <- unique(tot_frame$`Security Region`)
   nrSRs <- length(SRs)
   df <- data.frame()
-  
-  
+  #for loop to select the security regions one by one
   for (j in 1: nrSRs) {
    stepA <- filter(tot_frame, `Security Region` == SRs[j]) #select first SR
-   
+   #then another for loop to get the dates
    for (i in 1: (nrow(stepA)-1)) {
     step1 <- stepA[i,] #select date of reference
     step2 <- stepA[i+1,] #select date we want to calculate the nr of new cases for
+    #calculate the difference
     diff <- step2$Value - step1$Value
-    
+    #get it in a dataframe
     sub_df <- data.frame(`Security Region` = SRs[j], `Date` = as.Date(step2$Date), `Value` = as.numeric(diff))
+    #bind them together
     df <- rbind(df, sub_df)
     }
   }
   
-  #WRAP IN ONE FRAME
-plot <- ggplot(df, aes(as.Date(Date), Value)) +
+  #wrap in one frame
+plot <- 
+  ggplot(df, aes(as.Date(Date), Value)) +
       geom_bar(stat = 'identity', color = "greenyellow") +
-      labs(x = "Date", y = "New number of reported cases per 100,000 inhabitants per security region") + facet_wrap(. ~ `Security.Region`) + scale_x_date(date_labels = "%b") +
+      labs(x = "Date", y = "New reported cases per 100,000 inhabitants") + facet_wrap(. ~ `Security.Region`) + scale_x_date(date_labels = "%b") +
   theme_minimal()
   
 output <- list (df, plot)
@@ -446,17 +445,124 @@ diffperregion(tot_frame)
 
 ```
 
-
-
-
+\begin{figure}[!hbt]
+\centering
+        \includegraphics{newcaseSR.png}
+    \caption{New number of reported cases per 100,000 inhabitants per security region}
+    \label{fig:newcaseSR}
+\end{figure}
 
 \subsection{What is the mean level of RNA particles found in the water per 100,000 inhabitants?}
 \label{sec:sub3}
 
-We saw that the number of infections had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage water to precede the increase in the number of infections. Therefore, we visualized the distribution of the RNA particles in the Netherlands over time. This figure can be seen in the appendix. The shape of the plot loosely follows the same trend as the plot of the reported infections per day, but its shape is much less smooth. The numbers of the amount of RNA particles in the sewage per day fluctuate more than the number of new infections. 
+As we mentioned in the introduction, the level of RNA particles in the sewage is measured by taking a sample from a STP. Figure \ref{fig:maplocations} shows the locations of the STPs and shows the security region where the STP is located. The figure does not show from which security region the STP processes sewage. For example, in the security region Noord-Holland-Noord there are ten STPs.
 
-The aforementioned plot shows the total number of RNA particles per day. The number of installations included differs each day, which can be seen in the appendix. This may be an explanation for the fluctuation in the amount of RNA particles measured each day. To correct for this we also plotted the mean level of RNA particles in the sewage per day. The plot, which can be seen in the appendix, is smoother than the plot that shows the totals. However, there is still some fluctuation. If in all installations the same amount of RNA particles were found, you would not expect fluctuations. In that case the mean level is not affected by a missing installation. This suggests that in different installations a different amount of RNA particles can be found. Since different installations care for different regions, different regions may have different trends. In order to explore this we plotted the total amount of RNA particles found in the sewage for per day for each region. 
-As can be seen in the figure, the trend of the amount of RNA particles found differs per security region. For example, the amount of RNA particles found in Friesland is lower than in Midden- en West-Brabant. Also, in Friesland there is not really a peak, whereas there is clear peak in Midden- en West-Brabant. The trends per region look similar to the overall trend. They loosely follow the trend of infections, but there are still fluctuations. 
+
+```{r include = FALSE}
+x11 <- paste(
+  "Municipalities and security regions in the Netherlands"
+)
+mun_dat <- read.csv2("municipalities_v7.csv", header = T, sep = ",") #load in municipality dataset
+mun_dat2 <- mun_dat[,c(3,4,6,7)] #select the columns municipality, province, latitude and longitude
+colnames(mun_dat2) <- c("municipality", "province", "latitude", "longitude") #assign correct columnnames
+mun_dat2 <- mun_dat2[-c(228,229),] #remove rows with incorrect coordinates
+mun_dat2$municipality <- gsub("'", "", mun_dat2$municipality)
+mun_dat3 <- as.data.frame(subset(mun_dat2, mun_dat2$municipality %in% used_dates$MN_name))
+
+mun_dict <- hash()
+for (i in 1:nrow(used_dates)) {
+  if (used_dates[i,5] %in% keys(mun_dict)) {
+    next
+  } else {
+    mun_dict[[used_dates[i,5]]] <- used_dates[i,3]
+  }
+}
+
+mun_dat3$SR_name <- rep("X", nrow(mun_dat3))
+for (i in 1:nrow(mun_dat3)) {
+  mun_dat3[i,5] <- mun_dict[[mun_dat3[i,1]]]
+}
+
+muns <- unique(mun_dat3$municipality)
+mun_dat3$Total_cases <- rep(0, nrow(mun_dat3))
+for (i in 1:length(muns)) {
+  muni_data <- used_dates[used_dates$MN_name == muns[i],]
+  no_rep_muni_data <- muni_data[!duplicated(muni_data[,"MN_name"]),]
+  mun_dat3[i,6] <- sum(no_rep_muni_data$MN_total.reported)
+}
+
+NLD <- readRDS("gadm36_NLD_2_sp.rds")
+NLD@data %>% as_tibble()
+
+NLD_fixed <- subset(NLD, !NLD$NAME_1  %in% c("Zeeuwse meren", "IJsselmeer"))
+NLD_fixed <- fortify(NLD_fixed)
+
+plot_dat <- used_dates %>% select(gemeente = `MN_name`, Regio = `SR_name`)
+
+names_and_numbers <- data_frame(id=rownames(NLD@data),
+                                gemeente=NLD@data$NAME_2) %>% 
+  left_join(plot_dat, by = "gemeente")
+
+final_map <- as.data.frame(left_join(NLD_fixed, names_and_numbers, by = "id"))
+```
+
+```{r maplocations, results = 'hide', fig.align = "center", fig.cap = x12, fig.height = 9.5, fig.width = 10, fig.pos = "H"}
+x12 <- paste("Treatment plants in the Netherlands")
+used_dates$TP_lat <- 52.15517 + (( (3235.65389 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-32.58297 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (-0.2475 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.84978 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.0655 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.01709 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00738 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (0.0053 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4) + (-0.00039 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (0.00033 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00012 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) )/ 3600)
+
+used_dates$TP_long <- 5.387206 + (( (5260.52916 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (105.94684 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (2.45656 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.81885 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3) + (0.05594 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.05607 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (0.01199 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00256 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (0.00128 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 4) + (0.00022 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00022 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (0.00026 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 5) ) /3600)
+
+tp_data <- used_dates[,c("SR_name","TP_lat", "TP_long")]
+tp_data <- tp_data[complete.cases(tp_data),]
+tp_data <- tp_data[!duplicated(tp_data),]
+
+ggplot(final_map)+
+  theme_minimal()+
+  geom_polygon( aes(x = long, y = lat, group = group),
+                color = "grey", alpha = 1/5) +
+  coord_map() +
+  scale_fill_distiller(name = "Number of people in gemeente", # change titel legend
+                       palette = "Spectral")+ # change the color scheme
+  theme(legend.position = "bottom")+
+  geom_point(data = tp_data, aes(x = TP_long, y = TP_lat, colour = SR_name))
+```
+
+We saw in Figure \ref{fig:newcaseNL} that the number of cases had been increasing since the beginning of September and peaked in October. As one only requests a test after experiencing symptoms, one would expect the amount of RNA particles in the sewage to precede the increase in the number of cases. To be able to compare the RNA flow with the daily increase, we first visualized the distribution of the RNA particles in the Netherlands over time, which can be seen in Appendix \ref{sec:Asub3}. The shape of this plot loosely follows the same trend as Figure \ref{fig:newcaseNL} displaying the increase in reported cases per day, but its shape is much less smooth. This could be due to the fact that the number of STPs that reported differs each day, which can be seen in Figure \ref{fig:installations} in Appendix \ref{sec:Asub3}. To correct for this we also plotted the mean level of RNA particles in the sewage per day in Figure \ref{fig:meanRNA}.
+
+
+```{r}
+virusCalculator_new_means <- function(used_dates) {
+  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
+  #till october the tenth
+  dates <- unique(used_dates$newdate)
+  #makes an empty numeric vector which length is equal to number of dates
+  means <- numeric(length(dates))
+  for (i in 1:length(means)) {
+    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
+    date_data <- filter(used_dates, newdate == dates[i])
+    #delete rows if the water installation name is already in other row.
+    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
+    #take the mean of the rna per 100000 column and store in means vector
+    means[i] <- mean(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
+  }
+  #put date and means vector in dataframe.
+  means_frame <- as.data.frame(cbind(dates, means))
+  #define column names.
+  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
+  #coerce the column into double precision vector.
+  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
+  #create a barplot 
+  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', 
+          xlab = 'Date', ylab = 'Mean RNA flow per 100,000 inhabitants', names.arg = dates)
+  return(means_frame)
+}
+```
+
+```{r meanRNA, results = 'hide', fig.align = "center", fig.cap = x7, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
+x7 <- paste(
+    "Mean RNA flow per 100,000 inhabitants in the Netherlands per day")
+virusCalculator_new_means(used_dates)
+```
 
 ```{r fig.width = 10, include = FALSE}
 #create adjusted RNA flow measure to account for STPs that treat water from multiple SRs. 
@@ -492,24 +598,27 @@ RNAperregion(used_dates)
 
 ```
 
+The trend in this plot is smoother than the plot that showed the totals. However, there is still some fluctuation. If the same amount of RNA particles were found in all installations, you would not expect fluctuations. In that case the mean level would not be affected by a missing installation. This could be due to differing amounts of RNA particles found in different installations. Since different installations care for different regions, different regions may have different trends. In order to explore this, we plotted the mean amount of RNA particles found in the sewage per day for each region. 
+
 \begin{figure}[!hbt]
 \centering
         \includegraphics{RNA flow SR.png}
     \caption{Mean RNA flow per 100,000 inhabitants per security region per day}
-    \label{fig:nice}
+    \label{fig:meanRNASR}
 \end{figure}
 
+As can be seen in Figure \ref{fig:meanRNASR}, the trend of the amount of RNA particles found differs per security region. For example, the amount of RNA particles found in Friesland is lower than in Midden- en West-Brabant. Also, in Friesland there is not really a peak, whereas there is a clear peak in Midden- en West-Brabant. The trends per region look similar to the overall trend. They loosely follow the trend of the reported cases, but there are still fluctuations.
 
-\subsection{How do RNA particles and the total number of infections relate to each other?}
+\subsection{How do RNA particles and the increase in the number of cases relate to each other?}
 \label{sec:sub4}
 
-As mentioned in the data description, some installations process water from multiple security regions, rendering the current RNA flow variable unrepresentative. We do have a variable available that contains the proportion of water from the security region processed by that respective installation. We multiplied these two columns to create a representative RNA flow variable.
+As mentioned in the data description, some STPs process water from multiple security regions, rendering the current RNA flow variable unrepresentative. Another variable is available that contains the proportion of water from the security region processed by that respective STP. By multiplying these two, a representative RNA flow variable was created. 
 
-Now that the RNA flow has been weighted, we want to inspect how the RNA flow is related to the increase in the number of infections on the level of the security regions. To achieve this, we altered the current functions for calculating the RNA flow and increase in number of infections per day so that these values are reported for each security region per day. Subsequently, we compared the RNA flow from one day to the increase in the number of reported infections from seven days later. The reason for this is that there is generally a seven-day time lag between a person contracting COVID – leaving RNA particles in the sewage water – and getting a positive test [@peccia2020measurement]. A scatterplot with the aforementioned data should provide a first impression of how they are related to each other. Since not every security region has data about the RNA flow on any given day and data about the increase in the number of infections seven days later, only security regions that have data for both days are selected. Subsequently, the correlation for those data is calculated.
+After weighting the RNA flow, we inspected how the RNA flow related to the increase in the number of cases on the level of the security regions. To achieve this, we altered the current functions for calculating the RNA flow and increased the number of cases per day so that these values are reported for each security region per day. Subsequently, we compared the RNA flow from one day to the increase in the number of reported cases from seven days later. The reason for this is that there is generally a seven-day time lag between a person contracting COVID – leaving RNA particles in the sewage water – and getting a positive test [@peccia2020measurement]. 
 
-Figure \ref{fig:7} shows the correlation between the RNA flow on the 8th of September and the increase in the number of infections on the 15th of September. As can been seen from the scatterplot, these data do not seem be strongly related to each other. Additionally, the correlation associated with this scatterplot is 0.027, which indicates that these data almost show no relationship to each other. This strikes us as very surprising, since one would expect a relationship between the RNA flow and the increase in the number of infections. In the next step, we extend the analysis conducted over the period of September until November to see if this trend persists.
+Figures \ref{fig:correlation1day} and \ref{fig:correlationtime} in Appendix \ref{sec:Asub4} show the correlation between the RNA flow on the 8th of September and the increase in the number of cases on the 15th of September and the rest of the days in the dataset, respectively. These figures displayed vastly differing scattered points, which was to be expected as we had established previously that the security regions displayed differences, both in number of new cases and mean RNA flow. We proceeded to plot the RNA flow and increase in cases separately for each security region. Then, we displayed the RNA flow on a given day and the increase in cases seven days later as a dot on a scatterplot. Doing this for all days in the dataset enabled us to calculate correlations between mean RNA flow and the increase in the number of cases for each security region. The resulting scatterplots and correlations are displayed in Figure \ref{fig:correlationSR}. 
 
-Figure \ref{fig:8} shows that the correlations fluctuate over time, which seems very interesting. If the data points would have formed a straight horizontal line, the estimation of the true number of infections in the Netherlands would have been more straightforward, since it would mean that the relationship between the RNA flow and the increase in infections would have been the same for every day. The mean correlation between the datapoints in this scatterplot is 0.33, which is a moderate positive correlation. This means that as the pandemic progresses, the relationship between the RNA flow and the increase in the number of infections becomes stronger. We have two hypotheses as to why this would be the case: it could be a result of increased consistency and precision in the measurements as we get more rigorous in reporting these data, or – as the number of cases has only increased over the period we analysed – it could mean that RNA flow becomes a better predictor of the total number of reported cases, as both measures have higher values.
+As can be seen in the figure, the correlations vary, ranging from .19 in Groningen to .63 in Hollands-Midden. Overall, the results indicate a positive association between mean RNA flow and increase in number of cases. When the number of RNA particles in the sewage increases, so do the number of new cases. However, as the size of the correlation coefficient differs between the security regions, RNA flow cannot be aggregated to a single predictor and used to estimate the number of cases in the Netherlands as a whole in one go. We elaborate on the implications of this finding in the conclusion. 
 
 ```{r fig.width = 10, include = FALSE}
 newCalculator <- function(used_dates) {
@@ -555,7 +664,7 @@ tot_frame <- used_dates[order(used_dates$Region),]  #reorder the resulting dataf
 #wrap multiple plots in one frame
 plot <- ggplot(tot_frame, aes(x = rna, y = increase)) +
   geom_point(stat = 'identity', color = "greenyellow") +
-  labs(x = "RNA flow", y = "Increase") + 
+  labs(x = "Mean RNA flow", y = "New reported cases") + 
   facet_wrap(. ~ `Security Region`) +
   theme_minimal() +
   stat_cor(method = "pearson", label.x = 3, label.y = 1000)
@@ -577,111 +686,29 @@ corperregion(better_frame)
 \centering
         \includegraphics{Te Groot Plot.png}
     \caption{Relation between RNA flow and number of covid infections}
-    \label{fig:fancyplot}
+    \label{fig:correlationSR}
 \end{figure}
-
-```{r 9, message=FALSE, warning=FALSE, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
-x11 <- paste(
-  "Municipalities and Security Regions in the Netherlands"
-)
-mun_dat <- read.csv2("municipalities_v7.csv", header = T, sep = ",") #load in municipality dataset
-mun_dat2 <- mun_dat[,c(3,4,6,7)] #select the columns municipality, province, latitude and longitude
-colnames(mun_dat2) <- c("municipality", "province", "latitude", "longitude") #assign correct columnnames
-mun_dat2 <- mun_dat2[-c(228,229),] #remove rows with incorrect coordinates
-mun_dat2$municipality <- gsub("'", "", mun_dat2$municipality)
-mun_dat3 <- as.data.frame(subset(mun_dat2, mun_dat2$municipality %in% used_dates$MN_name))
-
-mun_dict <- hash()
-for (i in 1:nrow(used_dates)) {
-  if (used_dates[i,5] %in% keys(mun_dict)) {
-    next
-  } else {
-    mun_dict[[used_dates[i,5]]] <- used_dates[i,3]
-  }
-}
-
-mun_dat3$SR_name <- rep("X", nrow(mun_dat3))
-for (i in 1:nrow(mun_dat3)) {
-  mun_dat3[i,5] <- mun_dict[[mun_dat3[i,1]]]
-}
-
-muns <- unique(mun_dat3$municipality)
-mun_dat3$Total_cases <- rep(0, nrow(mun_dat3))
-for (i in 1:length(muns)) {
-  muni_data <- used_dates[used_dates$MN_name == muns[i],]
-  no_rep_muni_data <- muni_data[!duplicated(muni_data[,"MN_name"]),]
-  mun_dat3[i,6] <- sum(no_rep_muni_data$MN_total.reported)
-}
-
-NLD <- readRDS("gadm36_NLD_2_sp.rds")
-NLD@data %>% as_tibble()
-
-
-NLD_fixed <- subset(NLD, !NLD$NAME_1  %in% c("Zeeuwse meren", "IJsselmeer"))
-NLD_fixed <- fortify(NLD_fixed)
-
-plot_dat <- used_dates %>% select(gemeente = `MN_name`, Regio = `SR_name`)
-
-names_and_numbers <- data_frame(id=rownames(NLD@data),
-                                gemeente=NLD@data$NAME_2) %>% 
-  left_join(plot_dat, by = "gemeente")
-
-final_map <- as.data.frame(left_join(NLD_fixed, names_and_numbers, by = "id"))
-ggplot(final_map) +
-  theme_minimal()+
-  geom_polygon( aes(x = long, y = lat, group = group),
-                color = "grey", alpha = 1/5) +
-  coord_map() +
-  theme(legend.position = "right")+
-  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), colour = SR_name, size = Total_cases))  +
-  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), size = Total_cases), colour = "black", pch = 21) +
-  scale_size_continuous(range = c(1,10),
-                        breaks = seq(0,7000, by = 700))
-```
-
-```{r 10, results = 'hide', fig.align = "center", fig.cap = x12, fig.height = 10, fig.width = 10, fig.pos = "H"}
-x12 <- paste(
-  "Treatment plants in the Netherlands"
-)
-used_dates$TP_lat <- 52.15517 + (( (3235.65389 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-32.58297 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (-0.2475 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.84978 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.0655 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.01709 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00738 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (0.0053 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4) + (-0.00039 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (0.00033 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 4 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00012 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) )/ 3600)
-
-used_dates$TP_long <- 5.387206 + (( (5260.52916 * ((used_dates$TP_Xco - 155000) * 10 ^ -5)) + (105.94684 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (2.45656 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.81885 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3) + (0.05594 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 3) + (-0.05607 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (0.01199 * ((used_dates$TP_Yco - 463000) * 10 ^ -5)) + (-0.00256 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 3 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (0.00128 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 4) + (0.00022 * ((used_dates$TP_Yco - 463000) * 10 ^ -5) ^ 2) + (-0.00022 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 2) + (0.00026 * ((used_dates$TP_Xco - 155000) * 10 ^ -5) ^ 5) ) /3600)
-
-tp_data <- used_dates[,c("SR_name","TP_lat", "TP_long")]
-tp_data <- tp_data[complete.cases(tp_data),]
-tp_data <- tp_data[!duplicated(tp_data),]
-
-ggplot(final_map)+
-  theme_minimal()+
-  geom_polygon( aes(x = long, y = lat, group = group),
-                color = "grey", alpha = 1/5) +
-  coord_map() +
-  scale_fill_distiller(name = "Number of people in gemeente", # change titel legend
-                       palette = "Spectral")+ # change the color scheme
-  theme(legend.position = "bottom")+
-  geom_point(data = tp_data, aes(x = TP_long, y = TP_lat, colour = SR_name))
-```
 
 \section{Discussion}
 \label{sec:discussion}
-When we started our quest, our aim was to build a model around RNA particles in the sewage in order to predict COVID-19 infections. We soon realized that this might be unrealistic. In order to find out how the amount of RNA particles in the sewage and COVID-19 infections are related we had to conduct a whole research on its own. We therefore shifted our focus to understanding this relationship. We regard this report as a stepping stone to a model that can predict the number of COVID-19 cases.
+When we started this project, our aim was to build a model around RNA particles in the sewage in order to estimate the true number of COVID-19 cases in the Netherlands. After our initial exploratory analyses, we soon realized that RNA flow is a volatile indicator and we concluded that building a model within the scope of this project would be unrealistic. We therefore shifted our focus to understanding how the amount of RNA particles in the sewage and COVID-19 cases are related. We regard this report as a stepping stone to a model that can predict the number of COVID-19 cases.
 
-As any research, our research has limitations. Our original dataset contained many missing values. We dealed with this by applying LOCF. This method has several drawbacks. It is a conservative method according to @streiner2008missing. More specifically this means that the estimates of the amount of RNA particles are an underestimation. A second problem wth the method is that it does not provide a measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. So we do not know how wrong the estimate is. 
+As any research, our research has limitations. Our original dataset contained many missing values. We dealt with this by applying LOCF. This method has several drawbacks. As mentioned in the data-section, LOCF is a conservative method according to @streiner2008missing. Applied to our results, this means that the estimates of the amount of RNA particles tend to maintain the status quo, and our results are less sensitive to changes between reports. A second problem with the method is that it does not provide a measure of uncertainty concerning the imputed values [@kunzmann2020imputation]. In our dataset, there are some STPs that report more frequently and consistently, and thus would suffer less bias as a result of the LOCF method. On the other hand, some STPs will suffer from this bias more significantly. The LOCF method does not enable us to quantify this difference in bias, meaning that we were unable to account for this in our analyses. 
 
-A second limitation of our study is that we discarded several outliers. In our analysis of the relationship between COVID-19 infections and RNA particles in the sewage we stumbled upon extreme values. These values had such an impact on the correlation for the particular region that we decided to discard them. We could not find out what these outliers were caused by. So it is possible that we threw away relevant information. 
+A second limitation of our study is that we discarded three outliers. In our analysis of the relationship between COVID-19 cases and RNA particles in the sewage we stumbled upon extreme values. As these values had such a different order of magnitude in comparison to all other data points, we suspect they were due to administrative errors and we decided to exclude them. Though, it is possible that these outliers were in fact not due to an administrative error and contained relevant information, but we are unable to form a definitive conclusion. Therefore, a correlation plot including these outliers is added in Figure \ref{fig:metoutliers} in Appendix \ref{sec:Asub4}. 
 
-Third, we are still unable to explain why the trend of RNA particles in the sewage per region fluctuates.Something else we could not explain are the different correlations between RNA particles in the sewage and COVID-19 infections on regional level. The fluctuations and the the different correlations may be caused by the same thing that is manifest on the regional level. Future research could focus on this.
+Moreover, we are still unable to explain why the trend of RNA particles in the sewage within each region fluctuates, where we would expect the curve to display a smooth trend. One possible explanation could be that, as indicated by the RIVM, people who contracted COVID-19 excrete RNA particles at different rates [@Riool]. Not every new case would therefore contribute the same increase in RNA particles to the sewage. Similarly, we also could not explain why different regions have different correlations between RNA particles in the sewage and COVID-19 cases. This could be a consequence of the fluctuations in the development of RNA particles over time. Another possible explanation could be that we chose one set time interval to calculate the correlations over, namely seven days. However, the time between contracting COVID-19 and excreting RNA into the sewage can vary greatly on an individual basis. Further research could explore this by calculating the correlation for multiple time intervals and taking their average.
 
+Lastly, the correlations we found between RNA flow and the number of new COVD-19 cases are relatively low. This could be explained by the fact that there is not a one-on-one relationship between RNA flow in the sewage and the change in number of cases. The RNA particles in the sewage represent the number of people that have COVID-19 at that point in time, not just the people who newly contracted the virus seven days later. To appropriately describe the relationship between the RNA particles and the true number of COVID-19 cases, we would need additional data on at which rates people that contracted the virus recover. 
 
 \section{Conclusion}
 \label{sec:conclusion}
 
-As of yet, we are unable to make a reliable estimate of the true number of infected people in the Netherlands. First and foremost, this is due to the unstable nature of the correlation between the RNA flow and the total number of recorded infections. However, the moderate, positive correlation between these two variables indicates that the RNA flow becomes an increasingly better predictor as we get further along in the pandemic. If we do essay to construct a prediction model, we recommend to use only the most recent RNA flow data to build it, as they are likely the most reliable. 
+This project aimed to assess whether RNA flow is an adequate predictor of the true number of COVID-19 cases in the Netherlands. Based on the results in Section \ref{sec:metresults}, we conclude that RNA flow could be a useful predictor, but that it is very volatile and that it does not have enough explanatory value on its own. The main reason for this conclusion is that the correlation between RNA flow and the increase in reported cases is unstable. It fluctuates over time and differs across regions as shown by figures \ref{fig:correlationtime} and \ref{fig:correlationSR}, respectively . As a result, it would be a massive undertaking to build one model based on the RNA flow data to estimate the true number of COVID-19 cases in the Netherlands as a whole at any given time, because the strength of the correlation would be different for each region and for each time stamp. Nevertheless, the correlation in each of the security regions is positive and most of the correlations are moderate. This indicates for every security region that as the RNA flow increases, the increase in cases also rises. Therefore, there are grounds to believe that RNA flow can be a useful predictor for the true number of COVID-19 cases. 
 
-Our next line of investigation will be to try to combine the RNA flow as a predictor with other available variables in our dataset, such as population density. We would also like to separate this analysis by security region, to isolate the effect of geographic location on the predictor. 
+However, it is not a strong enough predictor by itself. As the RIVM stated, only approximately 40% of infected people leave traces of the virus RNA in the sewage water [@Riool]. Additionally, some infected people secrete higher concentrations of the RNA than others. Hence we conclude that RNA is too unstable a measure to be the only predictor of the true number of cases. It should be combined with other useful predictors to create better estimates of the true number of COVID-19 cases.
 
-If we had infinite time and resources, we would like to enrich our analysis by incorporating other types of data in our analysis. For example, we could use behavioural data on when people are more or less likely to get tested when displaying symptoms, to improve the estimate of the true number of infected people. Another option would be to include environmental data on how much rain fell in each region on each day, to correct for the influence this might have on the concentration of RNA particles in the sewage water. For now, we conclude that the RNA flow is an imperfect indicator of the true number of infected people in the Netherlands, but that it could potentially be very valuable in combination with other data sources. 
-
+If we had infinite time and resources, we would like to build such a model and enrich it with other types of data. For example, we could use behavioural data on when people are more or less likely to get tested when displaying symptoms and include data on at which rates people recover from COVID-19, to improve the estimate of the true number of infected people. Another unexplored option is to - in addition to separating the analysis into different security regions - also control for population density on the municipal level. For now, we conclude that the RNA flow is an imperfect indicator of the true number of infected people in the Netherlands, but that it could potentially be very valuable in combination with other data sources. 
 
 \endgroup
 \newpage
@@ -698,7 +725,8 @@ If we had infinite time and resources, we would like to enrich our analysis by i
 \endgroup
 
 \appendix
-\section{Extra Plots}
+\section{Map of the Netherlands displaying municipalities, securite regions and number of cases}
+\label{sec:Amap}
 
 \captionsetup[figure]{
   font={footnotesize}, 
@@ -706,7 +734,22 @@ If we had infinite time and resources, we would like to enrich our analysis by i
   justification={raggedright},
   labelsep={period},
   skip={0pt}}
+  
+```{r mapmunicipality, message=FALSE, warning=FALSE, results = 'hide', fig.align = "center", fig.cap = x11, fig.height = 10, fig.width = 10, fig.pos = "H"}
+ggplot(final_map) +
+  theme_minimal()+
+  geom_polygon( aes(x = long, y = lat, group = group),
+                color = "grey", alpha = 1/5) +
+  coord_map() +
+  theme(legend.position = "right")+
+  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), colour = SR_name, size = Total_cases))  +
+  geom_point(data = mun_dat3, aes(x = as.numeric(longitude), y = as.numeric(latitude), size = Total_cases), colour = "black", pch = 21) +
+  scale_size_continuous(range = c(1,10),
+                        breaks = seq(0,7000, by = 700))
+```
 
+\section{Extra plots for subquestion three}
+\label{sec:Asub3}
 ```{r fig.width=10, include = FALSE}
 used_dates$TP_RNA.flow.per.100000.locf <- as.numeric(used_dates$TP_RNA.flow.per.100000.locf)
 
@@ -738,7 +781,7 @@ virusCalculator_new_totals <- function(used_dates) {
 
 ```
 
-```{r 4a, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r totalRNA, results = 'hide', fig.align = "center", fig.cap = x5, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x5 <- paste(
     "Total RNA flow per 100,000 inhabitants in the Netherlands per day")
 virusCalculator_new_totals(used_dates)
@@ -770,47 +813,14 @@ totalCalculator_installations <- function(sewer_data) {
 
 ```
 
-```{r 5, results = 'hide', fig.align = "center", fig.cap = x6, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r installations, results = 'hide', fig.align = "center", fig.cap = x6, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x6 <- paste(
     "Number of installations that have provided data per day")
 totalCalculator_installations(used_dates)
 ```
 
-```{r}
-virusCalculator_new_means <- function(used_dates) {
-  #creates a vector containing the unique values of the dates column of data. So vector with dates from september the seventh
-  #till october the tenth
-  dates <- unique(used_dates$newdate)
-  #makes an empty numeric vector which length is equal to number of dates
-  means <- numeric(length(dates))
-  for (i in 1:length(means)) {
-    #puts all the data of a particular date into date_data. the particular date changes at each iteration.
-    date_data <- filter(used_dates, newdate == dates[i])
-    #delete rows if the water installation name is already in other row.
-    df1 <- date_data[!duplicated(date_data[,"TP_code"]),]
-    #take the mean of the rna per 100000 column and store in means vector
-    means[i] <- mean(df1$TP_RNA.flow.per.100000.locf, na.rm = TRUE)
-  }
-  #put date and means vector in dataframe.
-  means_frame <- as.data.frame(cbind(dates, means))
-  #define column names.
-  colnames(means_frame) <- c("Date", "Mean RNA flow per 100000")
-  #coerce the column into double precision vector.
-  means_frame$`Mean RNA flow per 100000` <- as.double(means_frame$`Mean RNA flow per 100000`)
-  #create a barplot 
-  barplot(means_frame$`Mean RNA flow per 100000`, col='greenyellow', 
-          xlab = 'Date', ylab = 'Mean RNA flow per 100,000 inhabitants', names.arg = dates)
-  return(means_frame)
-}
-```
-
-```{r 4, results = 'hide', fig.align = "center", fig.cap = x7, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
-x7 <- paste(
-    "Mean RNA flow per 100,000 inhabitants in the Netherlands per day")
-virusCalculator_new_means(used_dates)
-```
-
-
+\section{Extra plots for subquestion four}
+\label{sec:Asub4}
 ```{r fig.width = 10, include = FALSE}
 newCalculator <- function(used_dates) {
   sr_frame <- data.frame()
@@ -858,13 +868,12 @@ for (i in 1:(length(regions))) {
 
 ```
 
-```{r 7, results = 'hide', fig.align = "center", fig.cap = x9, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r correlation1day, results = 'hide', fig.align = "center", fig.cap = x9, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x9 <- paste(
-    "Relation between RNA flow and increase in infections for one timestamp")
-plot(day_frame$RNA.flow, day_frame$Reported, col = "greenyellow", pch = 19, xlab = "RNA flow", ylab = "Increase in number of infections")
+    "Relation between RNA flow and new number of reported cases for one timestamp")
+plot(day_frame$RNA.flow, day_frame$Reported, col = "greenyellow", pch = 19, xlab = "Mean RNA flow", ylab = "New number of cases")
      abline(lm(Reported ~ RNA.flow, data = day_frame), lwd = 2)
 ```
-
 
 ```{r fig.width = 10, include = FALSE}
 corCalculator <- function(good_frame, used_dates) {
@@ -904,24 +913,26 @@ corr_frame$Date <- as.Date(corr_frame$Date)
 
 ```
 
-
-```{r 8, results = 'hide', fig.align = "center", fig.cap = x10, fig.height = 4, fig.width = 5.5, fig.pos = "H"}
+```{r correlationtime, results = 'hide', fig.align = "center", fig.cap = x10, fig.height = 3.5, fig.width = 5.5, fig.pos = "H"}
 x10 <- paste(
-    "Correlations between RNA flow and increase in infections over time")
+    "Correlations between RNA flow and new number of cases over time")
 plot(x = corr_frame$Date, y = corr_frame$Correlation, col = "greenyellow", pch = 19, xlab = "Date", ylab = "Correlation")
 abline(lm(Correlation ~ Date, data = corr_frame), lwd = 2)
 ```
 
-#Plot with the 3 outliers we removed coloured red
-```{r}
+```{r fig.width = 10, include=FALSE}
 ggplot(better_frame, aes(x = RNA.flow, y = Increase)) +
   geom_point(stat = 'identity', color = "greenyellow") +
   geom_point(data = outlier_frame, stat = 'identity', color = "red") +
-  labs(title = "Correlation between RNA flow and increase in nr of cases per region", subtitle = "Three outliers we removed colored red", x = "RNA flow", y = "Increase") + 
-  theme(plot.title = element_text(hjust = 0.5),
-        plot.subtitle = element_text(hjust = 0.5)) +
+  labs(x = "Mean RNA flow", y = "New reported cases") + 
   facet_wrap(. ~ `Region`) +
   theme_minimal() +
   stat_cor(method = "pearson", label.x = 3, label.y = 1000)
-
 ```
+
+\begin{figure}[!hbt]
+\centering
+        \includegraphics{metoutliers.png}
+    \caption{Correlation between RNA flow and new number of cases per region with outliers}
+    \label{fig:metoutliers}
+\end{figure}
